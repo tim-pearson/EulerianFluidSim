@@ -3,6 +3,6 @@ project(yerp)
 cmake_policy(SET CMP0072 NEW)
 find_package(OpenGL REQUIRED)
 
-add_executable(yerp src/main.cc src/glad.c src/glad.h)
+add_executable(yerp src/main.cc src/glad.c src/glad.h src/triangle_mesh.cc src/triangle_mesh.hh)
 
 target_link_libraries(yerp glfw OpenGL::GL)
