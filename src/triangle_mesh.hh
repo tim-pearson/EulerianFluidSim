@@ -7,5 +7,5 @@ void draw();
 ~TriangleMesh();
 
 private:
-unsigned int VBO, VAO, vertex_count;
+unsigned int VBO, VAO, EBO, vertex_count;
 };
