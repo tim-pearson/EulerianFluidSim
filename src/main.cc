@@ -1,5 +1,6 @@
 #include "glad.h"
 #include <GLFW/glfw3.h>
+#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -67,7 +68,7 @@ int main() {
   if (!glfwInit()) {
     return -1;
   }
-  window = glfwCreateWindow(640, 480, "Window", NULL, NULL);
+  window = glfwCreateWindow(640, 640, "Window", NULL, NULL);
   glfwMakeContextCurrent(window);
   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
     std::cout << "Couldnt load opengl" << '\n';
@@ -78,12 +79,18 @@ int main() {
   unsigned int shader =
       make_shader("../src/shaders/default.vert", "../src/shaders/default.frag");
 
-  std::vector<Vertex> vertexes = {{-1.0f, -1.0f, 0.0f},
-                                  {-1.0f, 1.0f, 0.25f},
-                                  {1.0f, 1.0f, 0.5f},
-                                  {1.0f, -1.0f, 1.0f}};
+  std::vector<Vertex> vertexes;
+  int gridSize = 20;                 
+  float cellSize = 2.0f / gridSize; 
 
-  TriangleMesh triangle = *new TriangleMesh(vertexes, 4);
+  for (int j = 0; j < gridSize; j++) {
+    for (int i = 0; i < gridSize; i++) {
+      float x = -1.0f + (i + 0.5f) * cellSize; // center X
+      float y = -1.0f + (j + 0.5f) * cellSize; // center Y
+      vertexes.push_back({x, y , 1.0f});
+    }
+  }
+  TriangleMesh triangle = *new TriangleMesh(vertexes, vertexes.size());
 
   while (!glfwWindowShouldClose(window)) {
 

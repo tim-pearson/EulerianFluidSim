@@ -1,20 +1,14 @@
 #include "triangle_mesh.hh"
 
+#include <iostream>
 #include <vector>
 
 #include "glad.h"
 
-void TriangleMesh::setData() {
-  std::vector<Vertex> vertexes = {{-1.0f, -1.0f, 0.0f},
-                                  {-1.0f, 1.0f, 0.25f},
-                                  {1.0f, 1.0f, 0.5f},
-                                  {1.0f, -1.0f, 1.0f}};
-  data = vertexes;
-}
 TriangleMesh::TriangleMesh(std::vector<Vertex> data, size_t count) {
 
   GLuint indices[] = {0, 1, 2, 0, 3, 2};
-  vertex_count = sizeof(indices) / sizeof(indices[0]);
+  vertex_count = count;
 
   glGenVertexArrays(1, &VAO);
   glBindVertexArray(VAO);
@@ -43,9 +37,9 @@ TriangleMesh::TriangleMesh(std::vector<Vertex> data, size_t count) {
 
 void TriangleMesh::draw() {
   glBindVertexArray(VAO);
-  glPointSize(10.0f);
+  glPointSize(4.0f);
   /* glDrawElements(GL_TRIANGLES, vertex_count, GL_UNSIGNED_INT, nullptr); */
-  glDrawArrays(GL_POINTS, 0, 4);
+  glDrawArrays(GL_POINTS, 0, vertex_count);
 
   glBindVertexArray(0);
 }
