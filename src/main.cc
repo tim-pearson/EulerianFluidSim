@@ -18,7 +18,7 @@ void updateDensity(std::vector<float> &densityData, int width, int height,
       float y = float(j) / float(height - 1);
 
       // Simple animated diagonal wave
-      densityData[j * width + i] = 0.5f + 0.5f * sin(time + (x + y) * 10.0f);
+      densityData[j * width + i] = 0.5f + 0.5f * sin(time * 2.0f + (x + y) * 10.0f);
     }
   }
 }
