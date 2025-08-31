@@ -78,12 +78,12 @@ int main() {
   unsigned int shader =
       make_shader("../src/shaders/default.vert", "../src/shaders/default.frag");
 
-  Vertex data[] = {{-1.0f, -1.0f, 0.2f},
-                   {-1.0f, 1.0f, 0.5f},
-                   {1.0f, 1.0f, 1.0f},
-                   {1.0f, -1.0f, 0.8f}};
+  std::vector<Vertex> vertexes = {{-1.0f, -1.0f, 0.0f},
+                                  {-1.0f, 1.0f, 0.25f},
+                                  {1.0f, 1.0f, 0.5f},
+                                  {1.0f, -1.0f, 1.0f}};
 
-  TriangleMesh triangle = *new TriangleMesh(data, 4);
+  TriangleMesh triangle = *new TriangleMesh(vertexes, 4);
 
   while (!glfwWindowShouldClose(window)) {
 

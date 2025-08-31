@@ -1,3 +1,2 @@
-const int WIDTH = 200;
-const int HEIGHT = 100;
-const int CELL_SIZE = 8;
+const int WIDTH = 4;
+const int HEIGHT = 4;

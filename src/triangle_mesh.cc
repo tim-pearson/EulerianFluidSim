@@ -4,9 +4,16 @@
 
 #include "glad.h"
 
-TriangleMesh::TriangleMesh(Vertex data[], size_t count) {
-  GLuint indices[] = {0, 1, 2, 0, 3, 2};
+void TriangleMesh::setData() {
+  std::vector<Vertex> vertexes = {{-1.0f, -1.0f, 0.0f},
+                                  {-1.0f, 1.0f, 0.25f},
+                                  {1.0f, 1.0f, 0.5f},
+                                  {1.0f, -1.0f, 1.0f}};
+  data = vertexes;
+}
+TriangleMesh::TriangleMesh(std::vector<Vertex> data, size_t count) {
 
+  GLuint indices[] = {0, 1, 2, 0, 3, 2};
   vertex_count = sizeof(indices) / sizeof(indices[0]);
 
   glGenVertexArrays(1, &VAO);
@@ -14,7 +21,7 @@ TriangleMesh::TriangleMesh(Vertex data[], size_t count) {
 
   glGenBuffers(1, &VBO);
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(GL_ARRAY_BUFFER, count * sizeof(Vertex), data, GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, count * sizeof(Vertex), data.data(), GL_STATIC_DRAW);
 
   glGenBuffers(1, &EBO);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
