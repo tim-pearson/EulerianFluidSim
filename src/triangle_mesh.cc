@@ -71,3 +71,10 @@ void TriangleMesh::createDensityTexture(int width, int height, float* densityDat
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+
+void TriangleMesh::updateDensity(float* densityData) {
+    glBindTexture(GL_TEXTURE_2D, densityTexture);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, gridWidth, gridHeight, GL_RED, GL_FLOAT, densityData);
+}
+
+

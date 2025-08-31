@@ -1,5 +1,6 @@
 #include "glad.h"
 #include <GLFW/glfw3.h>
+#include <cmath>
 #include <cstdio>
 #include <fstream>
 #include <iostream>
@@ -8,6 +9,19 @@
 #include <vector>
 #include "triangle_mesh.hh"
 
+// Helper to update density array with a moving gradient
+void updateDensity(std::vector<float> &densityData, int width, int height,
+                   float time) {
+  for (int j = 0; j < height; ++j) {
+    for (int i = 0; i < width; ++i) {
+      float x = float(i) / float(width - 1);
+      float y = float(j) / float(height - 1);
+
+      // Simple animated diagonal wave
+      densityData[j * width + i] = 0.5f + 0.5f * sin(time + (x + y) * 10.0f);
+    }
+  }
+}
 unsigned int make_module(const std::string &filepath,
                          unsigned int module_type) {
   std::ifstream file;
@@ -85,32 +99,38 @@ int main() {
       {-1.0f, 1.0f, 0.0f}   // top-left
   };
 
-int gridWidth =4; 
-int gridHeight =4;
-std::vector<float> densityData(gridWidth * gridHeight);
+  int gridWidth = 2;
+  int gridHeight = 2;
+  std::vector<float> densityData(gridWidth * gridHeight);
 
-// Fill with a diagonal gradient (0.0 → 1.0)
-for (int j = 0; j < gridHeight; ++j) {
+  // Fill with a diagonal gradient (0.0 → 1.0)
+  for (int j = 0; j < gridHeight; ++j) {
     for (int i = 0; i < gridWidth; ++i) {
-        float x = float(i) / float(gridWidth - 1);
-        float y = float(j) / float(gridHeight - 1);
-        densityData[j * gridWidth + i] = (x + y) * 0.5f;
+      float x = float(i) / float(gridWidth - 1);
+      float y = float(j) / float(gridHeight - 1);
+      densityData[j * gridWidth + i] = (x + y) * 0.5f;
     }
-}
+  }
 
   TriangleMesh triangle = *new TriangleMesh(vertexes, vertexes.size());
 
-triangle.createDensityTexture(gridWidth, gridHeight, densityData.data());
+  triangle.createDensityTexture(gridWidth, gridHeight, densityData.data());
 
   while (!glfwWindowShouldClose(window)) {
-
     glClear(GL_COLOR_BUFFER_BIT);
     glUseProgram(shader);
-    triangle.draw(shader);
-    glfwSwapBuffers(window);
 
+    // Animate density
+    float currentTime = (float)glfwGetTime();
+    updateDensity(densityData, gridWidth, gridHeight, currentTime);
+    triangle.updateDensity(densityData.data());
+
+    triangle.draw(shader);
+
+    glfwSwapBuffers(window);
     glfwPollEvents();
-  }
+}
+
   glDeleteProgram(shader);
   glfwTerminate();
   return 0;
