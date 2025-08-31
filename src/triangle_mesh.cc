@@ -35,17 +35,39 @@ TriangleMesh::TriangleMesh(std::vector<Vertex> data, size_t count) {
   glBindVertexArray(0);
 }
 
-void TriangleMesh::draw() {
-  glBindVertexArray(VAO);
-  glPointSize(4.0f);
-  /* glDrawElements(GL_TRIANGLES, vertex_count, GL_UNSIGNED_INT, nullptr); */
-  glDrawArrays(GL_POINTS, 0, vertex_count);
+void TriangleMesh::draw(GLuint shader) {
+    glBindVertexArray(VAO);
 
-  glBindVertexArray(0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, densityTexture);
+
+    // set the uniform in the shader program passed in
+    glUniform1i(glGetUniformLocation(shader, "uDensity"), 0);
+
+    glDrawArrays(GL_TRIANGLE_FAN, 0, vertex_count);
+    glBindVertexArray(0);
 }
+
 
 TriangleMesh::~TriangleMesh() {
   glDeleteVertexArrays(1, &VAO);
   glDeleteBuffers(1, &VBO);
   glDeleteBuffers(1, &EBO);
 }
+void TriangleMesh::createDensityTexture(int width, int height, float* densityData) {
+    gridWidth = width;
+    gridHeight = height;
+
+    glGenTextures(1, &densityTexture);
+    glBindTexture(GL_TEXTURE_2D, densityTexture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, gridWidth, gridHeight, 0, GL_RED, GL_FLOAT, densityData);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+

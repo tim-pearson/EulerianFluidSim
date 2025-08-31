@@ -78,25 +78,35 @@ int main() {
   glClearColor(0.25f, 0.25f, 0.25f, 0.25f);
   unsigned int shader =
       make_shader("../src/shaders/default.vert", "../src/shaders/default.frag");
+  std::vector<Vertex> vertexes = {
+      {-1.0f, -1.0f, 0.0f}, // bottom-left
+      {1.0f, -1.0f, 0.0f},  // bottom-right
+      {1.0f, 1.0f, 0.0f},   // top-right
+      {-1.0f, 1.0f, 0.0f}   // top-left
+  };
 
-  std::vector<Vertex> vertexes;
-  int gridSize = 20;                 
-  float cellSize = 2.0f / gridSize; 
+int gridWidth = 1048;
+int gridHeight = 1048;
+std::vector<float> densityData(gridWidth * gridHeight);
 
-  for (int j = 0; j < gridSize; j++) {
-    for (int i = 0; i < gridSize; i++) {
-      float x = -1.0f + (i + 0.5f) * cellSize; // center X
-      float y = -1.0f + (j + 0.5f) * cellSize; // center Y
-      vertexes.push_back({x, y , 1.0f});
+// Fill with a diagonal gradient (0.0 → 1.0)
+for (int j = 0; j < gridHeight; ++j) {
+    for (int i = 0; i < gridWidth; ++i) {
+        float x = float(i) / float(gridWidth - 1);
+        float y = float(j) / float(gridHeight - 1);
+        densityData[j * gridWidth + i] = (x + y) * 0.5f;
     }
-  }
+}
+
   TriangleMesh triangle = *new TriangleMesh(vertexes, vertexes.size());
+
+triangle.createDensityTexture(gridWidth, gridHeight, densityData.data());
 
   while (!glfwWindowShouldClose(window)) {
 
     glClear(GL_COLOR_BUFFER_BIT);
     glUseProgram(shader);
-    triangle.draw();
+    triangle.draw(shader);
     glfwSwapBuffers(window);
 
     glfwPollEvents();
