@@ -85,8 +85,8 @@ int main() {
       {-1.0f, 1.0f, 0.0f}   // top-left
   };
 
-int gridWidth = 1048;
-int gridHeight = 1048;
+int gridWidth =4; 
+int gridHeight =4;
 std::vector<float> densityData(gridWidth * gridHeight);
 
 // Fill with a diagonal gradient (0.0 → 1.0)
