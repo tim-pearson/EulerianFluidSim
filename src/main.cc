@@ -3,10 +3,15 @@
 #include <cmath>
 #include <cstdio>
 #include <fstream>
+
+#include "imgui.h"
+#include "imgui/backends/imgui_impl_glfw.h"
+#include "imgui/backends/imgui_impl_opengl3.h"
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
+#include "imgui.h"
 #include "triangle_mesh.hh"
 
 // Helper to update density array with a moving gradient
@@ -18,7 +23,8 @@ void updateDensity(std::vector<float> &densityData, int width, int height,
       float y = float(j) / float(height - 1);
 
       // Simple animated diagonal wave
-      densityData[j * width + i] = 0.5f + 0.5f * sin(time * 2.0f + (x + y) * 10.0f);
+      densityData[j * width + i] =
+          0.5f + 0.5f * sin(time * 2.0f + (x + y) * 10.0f);
     }
   }
 }
@@ -89,6 +95,19 @@ int main() {
     glfwTerminate();
     return -1;
   }
+  // Setup ImGui context
+  // Setup ImGui context
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+  ImGuiIO &io = ImGui::GetIO();
+  (void)io;
+
+  // Setup ImGui style
+  ImGui::StyleColorsDark();
+
+  // Setup Platform/Renderer backends
+  ImGui_ImplGlfw_InitForOpenGL(window, true);
+  ImGui_ImplOpenGL3_Init("#version 330"); // GLSL version
   glClearColor(0.25f, 0.25f, 0.25f, 0.25f);
   unsigned int shader =
       make_shader("../src/shaders/default.vert", "../src/shaders/default.frag");
@@ -127,9 +146,38 @@ int main() {
 
     triangle.draw(shader);
 
+    // Start new ImGui frame
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    // Build your GUI
+    ImGui::Begin("Controls");
+    ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+    static float waveSpeed = 2.0f;
+    ImGui::SliderFloat("Wave Speed", &waveSpeed, 0.1f, 10.0f);
+    ImGui::End();
+
+    // Apply GUI-controlled value
+    currentTime = (float)glfwGetTime();
+    updateDensity(densityData, gridWidth, gridHeight, currentTime * waveSpeed);
+    triangle.updateDensity(densityData.data());
+
+    // Render scene
+    glClear(GL_COLOR_BUFFER_BIT);
+    glUseProgram(shader);
+    triangle.draw(shader);
+
+    // Render ImGui on top
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
     glfwSwapBuffers(window);
     glfwPollEvents();
-}
+
+    glfwSwapBuffers(window);
+    glfwPollEvents();
+  }
 
   glDeleteProgram(shader);
   glfwTerminate();
