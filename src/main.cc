@@ -4,6 +4,8 @@
 #include <cstdio>
 #include <fstream>
 
+#include "gui/controlpanel.hh"
+#include "gui/gui.hh"
 #include "imgui.h"
 /* #include "imgui/backends/imgui_impl_glfw.h" */
 /* #include "imgui/backends/imgui_impl_opengl3.h" */
@@ -20,28 +22,29 @@
 // Helper to update density array with a moving gradient
 void updateDensity(std::vector<float> &densityData, int width, int height,
                    float time) {
-    // Center of the grid
-    float cx = (width - 1) * 0.5f;
-    float cy = (height - 1) * 0.5f;
-    float maxRadius = std::sqrt(cx * cx + cy * cy);
+  // Center of the grid
+  float cx = (width - 1) * 0.5f;
+  float cy = (height - 1) * 0.5f;
+  float maxRadius = std::sqrt(cx * cx + cy * cy);
 
-    for (int j = 0; j < height; ++j) {
-        for (int i = 0; i < width; ++i) {
-            float dx = i - cx;
-            float dy = j - cy;
-            float dist = std::sqrt(dx * dx + dy * dy);
+  for (int j = 0; j < height; ++j) {
+    for (int i = 0; i < width; ++i) {
+      float dx = i - cx;
+      float dy = j - cy;
+      float dist = std::sqrt(dx * dx + dy * dy);
 
-            // Pulsating circular wave
-            float wave = 0.5f + 0.5f * std::sin(dist * 0.1f - time * 2.0f); 
-            densityData[j * width + i] = wave;
-        }
+      // Pulsating circular wave
+      float wave = 0.5f + 0.5f * std::sin(dist * 0.1f - time * 2.0f);
+      densityData[j * width + i] = wave;
     }
+  }
 }
-
 
 int main() {
 
   GLFWwindow *window;
+  ControlPanel ctrlPanel;
+  GUI gui;
   if (!glfwInit()) {
     return -1;
   }
@@ -52,21 +55,8 @@ int main() {
     glfwTerminate();
     return -1;
   }
-  // Setup ImGui context
-  // Setup ImGui context
-  IMGUI_CHECKVERSION();
-  ImGui::CreateContext();
-  ImGuiIO &io = ImGui::GetIO();
-  (void)io;
-
-  // Setup ImGui style
-  ImGui::StyleColorsDark();
-
-  // Setup Platform/Renderer backends
-  ImGui_ImplGlfw_InitForOpenGL(window, true);
-  ImGui_ImplOpenGL3_Init("#version 330"); // GLSL version
-  glClearColor(0.25f, 0.25f, 0.25f, 0.25f);
-
+  gui.window = window;
+  gui.setup();
   int gridWidth = WIDTH;
   int gridHeight = HEIGHT;
   std::vector<float> densityData(gridWidth * gridHeight);
@@ -95,20 +85,13 @@ int main() {
 
   while (!glfwWindowShouldClose(window)) {
     // Start new ImGui frame
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
 
-    // GUI
-    ImGui::Begin("Controls");
-    ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-    static float waveSpeed = 2.0f;
-    ImGui::SliderFloat("Wave Speed", &waveSpeed, 0.001f, 2.0f);
-    ImGui::End();
+    gui.draw();
 
     // Update simulation once
     float currentTime = (float)glfwGetTime();
-    updateDensity(densityData, gridWidth, gridHeight, currentTime * waveSpeed);
+    updateDensity(densityData, gridWidth, gridHeight,
+                  currentTime);
     triangle.updateDensity(densityData.data());
 
     // Render scene
