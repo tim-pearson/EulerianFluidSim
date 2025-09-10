@@ -14,5 +14,5 @@ public:
   void setupBoundaryConditions(float velocity);
 
   void addWall(int x, int y);
-  void step(float deltaTime);
+  void step(float deltaTime, ControlPanel &ctrlPanel);
 };

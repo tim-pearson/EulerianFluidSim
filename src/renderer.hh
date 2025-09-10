@@ -1,5 +1,6 @@
 #pragma once
 #include "glad.h" // for GLuint
+#include <Kokkos_DualView.hpp>
 #include <cstddef>
 #include <string>
 #include <vector>
@@ -20,7 +21,8 @@ public:
   void createDensityTexture(int width, int height, float *densityData);
 
   // optional: update the density per frame
-  void updateDensity(float *densityData);
+
+  void updateDensity(Kokkos::DualView<float **> &field);
 
   void updateDensity(std::vector<float> &densityData, int width, int height,
                      float time);

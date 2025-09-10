@@ -1,5 +1,6 @@
 #include "renderer.hh"
 
+#include <Kokkos_DualView.hpp>
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -75,10 +76,12 @@ void Renderer::createDensityTexture(int width, int height, float *densityData) {
   glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void Renderer::updateDensity(float *densityData) {
-  glBindTexture(GL_TEXTURE_2D, densityTexture);
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, gridWidth, gridHeight, GL_RED,
-                  GL_FLOAT, densityData);
+void Renderer::updateDensity(Kokkos::DualView<float**>& field){
+    // make sure host view is up-to-date
+    field.sync_host();
+    glBindTexture(GL_TEXTURE_2D, densityTexture);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, gridWidth, gridHeight,
+                    GL_RED, GL_FLOAT, field.h_view.data());
 }
 
 unsigned int make_module(const std::string &filepath,
