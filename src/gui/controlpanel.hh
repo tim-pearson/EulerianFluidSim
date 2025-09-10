@@ -32,6 +32,7 @@ struct ControlPanel {
     ImGui::Begin("Left Panel", nullptr, window_flags);
 
 
+    ImGui::SliderFloat("Wave Speed", &waveSpeed, 0, 2.0f);
     ImGui::Text("[Simulator]");
     ImGui::Text("FPS: %0.1f", fps);
     ImGui::SliderFloat("Gravity", &gravity, -50.0f, 50.0f);

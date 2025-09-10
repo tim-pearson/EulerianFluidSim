@@ -4,6 +4,7 @@ project(yerp)
 cmake_policy(SET CMP0072 NEW)
 
 find_package(OpenGL REQUIRED)
+find_package(Kokkos REQUIRED)
 
 file(GLOB_RECURSE sources src/*.cc)
 
@@ -34,6 +35,7 @@ target_include_directories(yerp PRIVATE
 )
 
 target_link_libraries(yerp PRIVATE
+  Kokkos::kokkos
     glfw
     OpenGL::GL
 )

@@ -1,11 +1,11 @@
 #include "gui.hh"
-#include <iostream>
-#include <stdexcept>
 #include "imgui/backends/imgui_impl_glfw.h"
 #include "imgui/backends/imgui_impl_opengl3.h"
 
-GUI::GUI( ControlPanel ctrlPanel,GLFWwindow *window, int width, int height, const char *title)
-    :ctrlPanel(ctrlPanel), window(window), width(width), height(height), title(title) {}
+GUI::GUI(ControlPanel &ctrlPanel, GLFWwindow *window, int width, int height,
+         const char *title)
+    : ctrlPanel(ctrlPanel), window(window), width(width), height(height),
+      title(title) {}
 
 void GUI::setup() {
   IMGUI_CHECKVERSION();
@@ -27,12 +27,7 @@ void GUI::draw() {
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();
 
-  // GUI
-  ImGui::Begin("Controls");
-  ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-  ctrlPanel.waveSpeed = 2.0f;
-  ImGui::SliderFloat("Wave Speed", &ctrlPanel.waveSpeed, 0.001f, 2.0f);
-  ImGui::End();
+  ctrlPanel.draw();
 }
 
 GUI::~GUI() {

@@ -2,24 +2,18 @@
 #include <GLFW/glfw3.h>
 #include <cmath>
 #include <cstdio>
-#include <fstream>
 
 #include "gui/controlpanel.hh"
 #include "gui/gui.hh"
 #include "imgui.h"
-/* #include "imgui/backends/imgui_impl_glfw.h" */
-/* #include "imgui/backends/imgui_impl_opengl3.h" */
 #include <iostream>
-#include <sstream>
 #include <string>
 #include <vector>
-#include "const.hh"
+#include "consts.hh"
 #include "imgui.h"
-#include "imgui/backends/imgui_impl_glfw.h"
 #include "imgui/backends/imgui_impl_opengl3.h"
 #include "renderer.hh"
 
-// Helper to update density array with a moving gradient
 void updateDensity(std::vector<float> &densityData, int width, int height,
                    float time) {
   // Center of the grid
@@ -47,7 +41,7 @@ int main() {
   if (!glfwInit()) {
     return -1;
   }
-  window = glfwCreateWindow(640, 640, "Window", NULL, NULL);
+  window = glfwCreateWindow(1024, 1024, "Window", NULL, NULL);
   glfwMakeContextCurrent(window);
   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
     std::cout << "Couldnt load opengl" << '\n';
@@ -57,16 +51,15 @@ int main() {
 
   GUI gui = GUI(ctrlPanel, window);
   gui.setup();
-  int gridWidth = WIDTH;
-  int gridHeight = HEIGHT;
-  std::vector<float> densityData(gridWidth * gridHeight);
+
+  std::vector<float> densityData(WIDTH * HEIGHT);
 
   // Fill with a diagonal gradient (0.0 → 1.0)
-  for (int j = 0; j < gridHeight; ++j) {
-    for (int i = 0; i < gridWidth; ++i) {
-      float x = float(i) / float(gridWidth - 1);
-      float y = float(j) / float(gridHeight - 1);
-      densityData[j * gridWidth + i] = (x + y) * 0.5f;
+  for (int j = 0; j < HEIGHT; ++j) {
+    for (int i = 0; i < WIDTH; ++i) {
+      float x = float(i) / float(WIDTH - 1);
+      float y = float(j) / float(HEIGHT - 1);
+      densityData[j * WIDTH + i] = (x + y) * 0.5f;
     }
   }
   std::vector<Vertex> vertexes = {
@@ -76,11 +69,11 @@ int main() {
       {-1.0f, 1.0f, 0.0f}   // top-left
   };
 
-  Renderer triangle = *new Renderer(vertexes, vertexes.size());
+  Renderer renderer = *new Renderer(vertexes, vertexes.size());
 
-  triangle.createDensityTexture(gridWidth, gridHeight, densityData.data());
+  renderer.createDensityTexture(WIDTH, HEIGHT, densityData.data());
 
-  unsigned int shader = triangle.make_shader("../src/shaders/default.vert",
+  unsigned int shader = renderer.make_shader("../src/shaders/default.vert",
                                              "../src/shaders/default.frag");
 
   while (!glfwWindowShouldClose(window)) {
@@ -90,14 +83,14 @@ int main() {
 
     // Update simulation once
     float currentTime = (float)glfwGetTime();
-    updateDensity(densityData, gridWidth, gridHeight,
+    updateDensity(densityData, WIDTH, HEIGHT,
                   currentTime * gui.ctrlPanel.waveSpeed);
-    triangle.updateDensity(densityData.data());
+    renderer.updateDensity(densityData.data());
 
     // Render scene
     glClear(GL_COLOR_BUFFER_BIT);
     glUseProgram(shader);
-    triangle.draw(shader);
+    renderer.draw(shader);
 
     // Render ImGui
     ImGui::Render();

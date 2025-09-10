@@ -110,27 +110,30 @@ unsigned int make_module(const std::string &filepath,
   }
   return shaderModule;
 }
-
 unsigned int Renderer::make_shader(const std::string &vertex_filepath,
-                         const std::string &fragment_filepath) {
-  std::vector<unsigned int> modules;
-  modules.push_back(make_module(vertex_filepath, GL_VERTEX_SHADER));
-  modules.push_back(make_module(fragment_filepath, GL_FRAGMENT_SHADER));
-  unsigned int shader = glCreateProgram();
-  for (unsigned int shaderModule : modules) {
-    glAttachShader(shader, shaderModule);
-  }
-  glLinkProgram(shader);
+                                   const std::string &fragment_filepath) {
+    std::vector<unsigned int> modules;
+    modules.push_back(make_module(vertex_filepath, GL_VERTEX_SHADER));
+    modules.push_back(make_module(fragment_filepath, GL_FRAGMENT_SHADER));
 
-  int success;
-  glGetShaderiv(shader, GL_LINK_STATUS, &success);
-  if (!success) {
-    char errorLog[1024];
-    glGetShaderInfoLog(shader, 1024, NULL, errorLog);
-    std::cout << "Shader Module Linking error:\n" << errorLog << std::endl;
-  }
-  for (unsigned int shaderModule : modules) {
-    glDeleteShader(shaderModule);
-  }
-  return shader;
+    unsigned int shaderProgram = glCreateProgram();
+    for (unsigned int shaderModule : modules) {
+        glAttachShader(shaderProgram, shaderModule);
+    }
+    glLinkProgram(shaderProgram);
+
+    int success;
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success); // <-- use glGetProgramiv
+    if (!success) {
+        char errorLog[1024];
+        glGetProgramInfoLog(shaderProgram, 1024, NULL, errorLog);
+        std::cout << "Shader Program Linking error:\n" << errorLog << std::endl;
+    }
+
+    for (unsigned int shaderModule : modules) {
+        glDeleteShader(shaderModule);
+    }
+
+    return shaderProgram;
 }
+
