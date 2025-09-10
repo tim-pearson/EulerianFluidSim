@@ -44,7 +44,6 @@ int main() {
 
   GLFWwindow *window;
   ControlPanel ctrlPanel;
-  GUI gui;
   if (!glfwInit()) {
     return -1;
   }
@@ -55,7 +54,8 @@ int main() {
     glfwTerminate();
     return -1;
   }
-  gui.window = window;
+
+  GUI gui = GUI(ctrlPanel, window);
   gui.setup();
   int gridWidth = WIDTH;
   int gridHeight = HEIGHT;
@@ -91,7 +91,7 @@ int main() {
     // Update simulation once
     float currentTime = (float)glfwGetTime();
     updateDensity(densityData, gridWidth, gridHeight,
-                  currentTime);
+                  currentTime * gui.ctrlPanel.waveSpeed);
     triangle.updateDensity(densityData.data());
 
     // Render scene

@@ -3,6 +3,7 @@
 
 struct ControlPanel {
   float velocity = 3.0f;
+  float waveSpeed = 2.0f;
   float dt = 0.2f;
   bool showAllVel = false;
   bool showAllDensities = true;
