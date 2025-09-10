@@ -44,7 +44,7 @@ struct ControlPanel {
     ImGui::Text("[Velocity]");
     ImGui::Checkbox("Show All Vel", &showAllVel);
     ImGui::Checkbox("Opti Div", &opti_divergence);
-    ImGui::SliderFloat("Velocity", &velocity, 0, 200.0f);
+    ImGui::SliderFloat("Velocity", &velocity, -100.0f, 200.0f);
     ImGui::SliderFloat("Velocity Draw Ratio", &velocityDrawRatio, 0.1f, 5.0f);
     ImGui::Separator();
 
