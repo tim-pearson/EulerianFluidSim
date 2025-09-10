@@ -11,78 +11,13 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include "const.hh"
 #include "imgui.h"
 #include "imgui/backends/imgui_impl_glfw.h"
 #include "imgui/backends/imgui_impl_opengl3.h"
-#include "triangle_mesh.hh"
+#include "renderer.hh"
 
 // Helper to update density array with a moving gradient
-void updateDensity(std::vector<float> &densityData, int width, int height,
-                   float time) {
-  for (int j = 0; j < height; ++j) {
-    for (int i = 0; i < width; ++i) {
-      float x = float(i) / float(width - 1);
-      float y = float(j) / float(height - 1);
-
-      // Simple animated diagonal wave
-      densityData[j * width + i] =
-          0.5f + 0.5f * sin(time * 2.0f + (x + y) * 10.0f);
-    }
-  }
-}
-unsigned int make_module(const std::string &filepath,
-                         unsigned int module_type) {
-  std::ifstream file;
-  std::stringstream bufferdLines;
-  std::string line;
-
-  file.open(filepath);
-  while (std::getline(file, line)) {
-    bufferdLines << line << "\n";
-  }
-  std::string shaderSource = bufferdLines.str();
-
-  const char *sharderSrc = shaderSource.c_str();
-
-  bufferdLines.str("");
-  file.close();
-
-  unsigned int shaderModule = glCreateShader(module_type);
-  glShaderSource(shaderModule, 1, &sharderSrc, NULL);
-  glCompileShader(shaderModule);
-  int success;
-  glGetShaderiv(shaderModule, GL_COMPILE_STATUS, &success);
-  if (!success) {
-    char errorLog[1024];
-    glGetShaderInfoLog(shaderModule, 1024, NULL, errorLog);
-    std::cout << "Shader Module Compilation eroor:\n" << errorLog << std::endl;
-  }
-  return shaderModule;
-}
-
-unsigned int make_shader(const std::string &vertex_filepath,
-                         const std::string &fragment_filepath) {
-  std::vector<unsigned int> modules;
-  modules.push_back(make_module(vertex_filepath, GL_VERTEX_SHADER));
-  modules.push_back(make_module(fragment_filepath, GL_FRAGMENT_SHADER));
-  unsigned int shader = glCreateProgram();
-  for (unsigned int shaderModule : modules) {
-    glAttachShader(shader, shaderModule);
-  }
-  glLinkProgram(shader);
-
-  int success;
-  glGetShaderiv(shader, GL_LINK_STATUS, &success);
-  if (!success) {
-    char errorLog[1024];
-    glGetShaderInfoLog(shader, 1024, NULL, errorLog);
-    std::cout << "Shader Module Linking error:\n" << errorLog << std::endl;
-  }
-  for (unsigned int shaderModule : modules) {
-    glDeleteShader(shaderModule);
-  }
-  return shader;
-}
 
 int main() {
 
@@ -111,17 +46,9 @@ int main() {
   ImGui_ImplGlfw_InitForOpenGL(window, true);
   ImGui_ImplOpenGL3_Init("#version 330"); // GLSL version
   glClearColor(0.25f, 0.25f, 0.25f, 0.25f);
-  unsigned int shader =
-      make_shader("../src/shaders/default.vert", "../src/shaders/default.frag");
-  std::vector<Vertex> vertexes = {
-      {-1.0f, -1.0f, 0.0f}, // bottom-left
-      {1.0f, -1.0f, 0.0f},  // bottom-right
-      {1.0f, 1.0f, 0.0f},   // top-right
-      {-1.0f, 1.0f, 0.0f}   // top-left
-  };
 
-  int gridWidth = 2;
-  int gridHeight = 2;
+  int gridWidth = WIDTH;
+  int gridHeight = HEIGHT;
   std::vector<float> densityData(gridWidth * gridHeight);
 
   // Fill with a diagonal gradient (0.0 → 1.0)
@@ -132,37 +59,36 @@ int main() {
       densityData[j * gridWidth + i] = (x + y) * 0.5f;
     }
   }
+  std::vector<Vertex> vertexes = {
+      {-1.0f, -1.0f, 0.0f}, // bottom-left
+      {1.0f, -1.0f, 0.0f},  // bottom-right
+      {1.0f, 1.0f, 0.0f},   // top-right
+      {-1.0f, 1.0f, 0.0f}   // top-left
+  };
 
-  TriangleMesh triangle = *new TriangleMesh(vertexes, vertexes.size());
+  Renderer triangle = *new Renderer(vertexes, vertexes.size());
 
   triangle.createDensityTexture(gridWidth, gridHeight, densityData.data());
 
+  unsigned int shader = triangle.make_shader("../src/shaders/default.vert",
+                                             "../src/shaders/default.frag");
+
   while (!glfwWindowShouldClose(window)) {
-    glClear(GL_COLOR_BUFFER_BIT);
-    glUseProgram(shader);
-
-    // Animate density
-    float currentTime = (float)glfwGetTime();
-    updateDensity(densityData, gridWidth, gridHeight, currentTime);
-    triangle.updateDensity(densityData.data());
-
-    triangle.draw(shader);
-
     // Start new ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    // Build your GUI
+    // GUI
     ImGui::Begin("Controls");
     ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
     static float waveSpeed = 2.0f;
-    ImGui::SliderFloat("Wave Speed", &waveSpeed, 0.1f, 10.0f);
+    ImGui::SliderFloat("Wave Speed", &waveSpeed, 0.001f, 2.0f);
     ImGui::End();
 
-    // Apply GUI-controlled value
-    currentTime = (float)glfwGetTime();
-    updateDensity(densityData, gridWidth, gridHeight, currentTime * waveSpeed);
+    // Update simulation once
+    float currentTime = (float)glfwGetTime();
+    /* triangle.updateDensity(densityData, gridWidth, gridHeight, currentTime * waveSpeed); */
     triangle.updateDensity(densityData.data());
 
     // Render scene
@@ -170,12 +96,9 @@ int main() {
     glUseProgram(shader);
     triangle.draw(shader);
 
-    // Render ImGui on top
+    // Render ImGui
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-    glfwSwapBuffers(window);
-    glfwPollEvents();
 
     glfwSwapBuffers(window);
     glfwPollEvents();
