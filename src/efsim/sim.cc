@@ -34,15 +34,19 @@ void Sim::setupInitialDensity(int width, int consentration) {
 
 void Sim::addWall(int x, int y) { mac.toggleWall(x, y); }
 
+
+
 void Sim::step(float deltaTime, ControlPanel &ctrlPanel) {
   setupBoundaryConditions(ctrlPanel.velocity);
   setupInitialDensity(ctrlPanel.densityHeight, ctrlPanel.densityConsentration);
+
   if (ctrlPanel.opti_divergence)
     clear_divergence_opti(mac, 40, OVERRELAXATION);
   else
     clear_divergence(mac, 40);
 
-  advect(mac, deltaTime, ctrlPanel.gravity);
+  // Temporarily set gravity to zero to debug lateral motion
+  advect(mac, deltaTime, 0.0f);
   density.advect(mac, ctrlPanel.dt);
   mac.sync_host();
 }
