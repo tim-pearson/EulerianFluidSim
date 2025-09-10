@@ -18,6 +18,26 @@
 #include "renderer.hh"
 
 // Helper to update density array with a moving gradient
+void updateDensity(std::vector<float> &densityData, int width, int height,
+                   float time) {
+    // Center of the grid
+    float cx = (width - 1) * 0.5f;
+    float cy = (height - 1) * 0.5f;
+    float maxRadius = std::sqrt(cx * cx + cy * cy);
+
+    for (int j = 0; j < height; ++j) {
+        for (int i = 0; i < width; ++i) {
+            float dx = i - cx;
+            float dy = j - cy;
+            float dist = std::sqrt(dx * dx + dy * dy);
+
+            // Pulsating circular wave
+            float wave = 0.5f + 0.5f * std::sin(dist * 0.1f - time * 2.0f); 
+            densityData[j * width + i] = wave;
+        }
+    }
+}
+
 
 int main() {
 
@@ -88,7 +108,7 @@ int main() {
 
     // Update simulation once
     float currentTime = (float)glfwGetTime();
-    /* triangle.updateDensity(densityData, gridWidth, gridHeight, currentTime * waveSpeed); */
+    updateDensity(densityData, gridWidth, gridHeight, currentTime * waveSpeed);
     triangle.updateDensity(densityData.data());
 
     // Render scene
