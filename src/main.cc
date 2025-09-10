@@ -5,13 +5,15 @@
 #include <fstream>
 
 #include "imgui.h"
-#include "imgui/backends/imgui_impl_glfw.h"
-#include "imgui/backends/imgui_impl_opengl3.h"
+/* #include "imgui/backends/imgui_impl_glfw.h" */
+/* #include "imgui/backends/imgui_impl_opengl3.h" */
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
 #include "imgui.h"
+#include "imgui/backends/imgui_impl_glfw.h"
+#include "imgui/backends/imgui_impl_opengl3.h"
 #include "triangle_mesh.hh"
 
 // Helper to update density array with a moving gradient
