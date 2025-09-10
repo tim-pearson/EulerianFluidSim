@@ -4,7 +4,8 @@ out vec4 FragColor;
 uniform sampler2D uDensity;
 
 void main() {
-    float density = texture(uDensity, vTexCoord).r;
+    // Flip horizontal axis for left → right
+    float density = texture(uDensity, vec2(1.0 - vTexCoord.y, vTexCoord.x)).r;
     FragColor = vec4(mix(vec3(0.0,0.0,1.0), vec3(1.0,0.0,0.0), density), 1.0);
 }
 
