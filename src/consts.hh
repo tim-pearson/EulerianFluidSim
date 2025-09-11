@@ -3,7 +3,7 @@
 /* const int HEIGHT = 6; // needs to be even, or fix div clearance algo */
 /* const int CELL_SIZE = 30; */
 
-const int WIDTH = 1024;  // needs to be even, or fix div clearance algo
+const int WIDTH = 512;  // needs to be even, or fix div clearance algo
 const int HEIGHT = 512; // needs to be even, or fix div clearance algo
 const int CELL_SIZE = 8;
 

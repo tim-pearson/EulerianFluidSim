@@ -67,94 +67,116 @@ void ScalarField::sync_host() {
 float ScalarField::interpolateHost(float px, float py) {
   return ScalarField::interpolate(field.h_view, px, py);
 }
+
 void ScalarField::advect(Mac &mac, float deltaTime) {
-    auto f = field.d_view;
-    auto t = tmp;
-    auto s = mac.sgrid.d_view;
+  auto f = field.d_view;
+  auto t = tmp;
+  auto s = mac.sgrid.d_view;
 
-    auto beta = Kokkos::View<float**>("beta", HEIGHT, WIDTH);
-    Kokkos::deep_copy(t, 0.0f);
-    Kokkos::deep_copy(beta, 0.0f);
+  auto beta = Kokkos::View<float **>("beta", HEIGHT, WIDTH);
+  Kokkos::deep_copy(t, 0.0f);
+  Kokkos::deep_copy(beta, 0.0f);
 
-    // Backward trace
-    Kokkos::parallel_for("Conservative Backward Trace", MDPOL(HEIGHT, WIDTH),
-        KOKKOS_LAMBDA(int j, int i) {
-            if (s(j+1,i+1) == 0) return;
+  // Backward trace (scatter mass from source cell to arrival cells)
+  Kokkos::parallel_for(
+      "Conservative Backward Trace", MDPOL(HEIGHT, WIDTH),
+      KOKKOS_LAMBDA(int j, int i) {
+        if (s(j + 1, i + 1) == 0)
+          return;
 
-            float x = i + 0.5f;
-            float y = j + 0.5f;
+        float x = i + 0.5f;
+        float y = j + 0.5f;
 
-            auto vel = mac.interpolateDevice(x,y);
-            float vx = vel.first;   // affects column (i)
-            float vy = vel.second;  // affects row (j)
+        auto vel = mac.interpolateDevice(x, y);
+        float vx = vel.first;
+        float vy = vel.second;
 
-            // Backtrace
-            float px = x - vx * deltaTime;
-            float py = y - vy * deltaTime;
+        // Backtrace: position where mass came from
+        float px = x + vx * deltaTime;
+        float py = y + vy * deltaTime;
 
-            px = Kokkos::clamp(px, 0.0f, WIDTH-1.0f);
-            py = Kokkos::clamp(py, 0.0f, HEIGHT-1.0f);
+        px = Kokkos::clamp(px, 0.0f, WIDTH - 1.0f);
+        py = Kokkos::clamp(py, 0.0f, HEIGHT - 1.0f);
 
-            int i0 = (int)floor(px);
-            int j0 = (int)floor(py);
-            int i1 = Kokkos::min(i0+1, WIDTH-1);
-            int j1 = Kokkos::min(j0+1, HEIGHT-1);
+        // Use same convention as your interpolate(): cell centers at (i+0.5,
+        // j+0.5)
+        int i0 = (int)Kokkos::floor(px - 0.5f);
+        int j0 = (int)Kokkos::floor(py - 0.5f);
 
-            float wx1 = px - i0;
-            float wx0 = 1.0f - wx1;
-            float wy1 = py - j0;
-            float wy0 = 1.0f - wy1;
+        int i1 = Kokkos::min(i0 + 1, WIDTH - 1);
+        int j1 = Kokkos::min(j0 + 1, HEIGHT - 1);
 
-            float w00 = wx0 * wy0;
-            float w01 = wx0 * wy1;
-            float w10 = wx1 * wy0;
-            float w11 = wx1 * wy1;
+        float wx1 = px - (i0 + 0.5f);
+        float wy1 = py - (j0 + 0.5f);
+        float wx0 = 1.0f - wx1;
+        float wy0 = 1.0f - wy1;
 
-            // Scatter correctly: j=row, i=col
-            Kokkos::atomic_add(&t(j0,i0), f(j,i)*w00); // lower-left
-            Kokkos::atomic_add(&t(j0,i1), f(j,i)*w10); // lower-right
-            Kokkos::atomic_add(&t(j1,i0), f(j,i)*w01); // upper-left
-            Kokkos::atomic_add(&t(j1,i1), f(j,i)*w11); // upper-right
+        // Ensure weights in [0,1] numerically
+        wx0 = Kokkos::clamp(wx0, 0.0f, 1.0f);
+        wx1 = Kokkos::clamp(wx1, 0.0f, 1.0f);
+        wy0 = Kokkos::clamp(wy0, 0.0f, 1.0f);
+        wy1 = Kokkos::clamp(wy1, 0.0f, 1.0f);
 
-            Kokkos::atomic_add(&beta(j,i), w00+w01+w10+w11);
-        });
+        float w00 = wx0 * wy0;
+        float w01 = wx0 * wy1;
+        float w10 = wx1 * wy0;
+        float w11 = wx1 * wy1;
 
-    // Forward redistribute leftover mass
-    Kokkos::parallel_for("Beta Forward Redistribution", MDPOL(HEIGHT, WIDTH),
-        KOKKOS_LAMBDA(int j, int i) {
-            if (s(j+1,i+1) == 0) return;
-            float b = beta(j,i);
-            if (b >= 1.0f) return;
+        // Scatter to t: t(row=j*, col=i*)
+        Kokkos::atomic_add(&t(j0, i0), f(j, i) * w00);
+        Kokkos::atomic_add(&t(j0, i1), f(j, i) * w10);
+        Kokkos::atomic_add(&t(j1, i0), f(j, i) * w01);
+        Kokkos::atomic_add(&t(j1, i1), f(j, i) * w11);
 
-            float leftover = (1.0f - b) * f(j,i);
+        // Record how much of this source cell's mass got distributed
+        Kokkos::atomic_add(&beta(j, i), (w00 + w01 + w10 + w11));
+      });
 
-            float x = i+0.5f;
-            float y = j+0.5f;
-            auto vel = mac.interpolateDevice(x,y);
+  // Forward redistribute leftover mass (if beta < 1)
+  Kokkos::parallel_for(
+      "Beta Forward Redistribution", MDPOL(HEIGHT, WIDTH),
+      KOKKOS_LAMBDA(int j, int i) {
+        if (s(j + 1, i + 1) == 0)
+          return;
+        float b = beta(j, i);
+        if (b >= 1.0f)
+          return;
 
-            float px = x + vel.first * deltaTime;
-            float py = y + vel.second * deltaTime;
+        float leftover = (1.0f - b) * f(j, i);
 
-            px = Kokkos::clamp(px, 0.0f, WIDTH-1.0f);
-            py = Kokkos::clamp(py, 0.0f, HEIGHT-1.0f);
+        float x = i + 0.5f;
+        float y = j + 0.5f;
+        auto vel = mac.interpolateDevice(x, y);
 
-            int i0 = (int)floor(px);
-            int j0 = (int)floor(py);
-            int i1 = Kokkos::min(i0+1, WIDTH-1);
-            int j1 = Kokkos::min(j0+1, HEIGHT-1);
+        float px = x + vel.first * deltaTime;
+        float py = y + vel.second * deltaTime;
 
-            float wx1 = px-i0;
-            float wx0 = 1.0f-wx1;
-            float wy1 = py-j0;
-            float wy0 = 1.0f-wy1;
+        px = Kokkos::clamp(px, 0.0f, WIDTH - 1.0f);
+        py = Kokkos::clamp(py, 0.0f, HEIGHT - 1.0f);
 
-            Kokkos::atomic_add(&t(j0,i0), leftover*wx0*wy0);
-            Kokkos::atomic_add(&t(j0,i1), leftover*wx1*wy0);
-            Kokkos::atomic_add(&t(j1,i0), leftover*wx0*wy1);
-            Kokkos::atomic_add(&t(j1,i1), leftover*wx1*wy1);
-        });
 
-    Kokkos::deep_copy(f, t);
-    Kokkos::fence();
+        int i0 = (int)Kokkos::floor(px - 0.5f);
+        int j0 = (int)Kokkos::floor(py - 0.5f);
+
+        int i1 = Kokkos::min(i0 + 1, WIDTH - 1);
+        int j1 = Kokkos::min(j0 + 1, HEIGHT - 1);
+
+        float wx1 = px - (i0 + 0.5f);
+        float wy1 = py - (j0 + 0.5f);
+        float wx0 = 1.0f - wx1;
+        float wy0 = 1.0f - wy1;
+
+        wx0 = Kokkos::clamp(wx0, 0.0f, 1.0f);
+        wx1 = Kokkos::clamp(wx1, 0.0f, 1.0f);
+        wy0 = Kokkos::clamp(wy0, 0.0f, 1.0f);
+        wy1 = Kokkos::clamp(wy1, 0.0f, 1.0f);
+
+        Kokkos::atomic_add(&t(j0, i0), leftover * wx0 * wy0);
+        Kokkos::atomic_add(&t(j0, i1), leftover * wx1 * wy0);
+        Kokkos::atomic_add(&t(j1, i0), leftover * wx0 * wy1);
+        Kokkos::atomic_add(&t(j1, i1), leftover * wx1 * wy1);
+      });
+
+  Kokkos::deep_copy(f, t);
+  Kokkos::fence();
 }
-

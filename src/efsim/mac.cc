@@ -32,7 +32,7 @@ void Mac::init() {
 
           for (int w =0; w < 20; w++)
 
-          for (int k = 0; k < 200; ++k) {
+          for (int k = 0; k < 50; ++k) {
             int x = ci - k + w;
 
             // Make the tip two cells wide
