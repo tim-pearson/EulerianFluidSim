@@ -1,4 +1,4 @@
 struct Vertex {
   float x, y;
-  float density;
+  /* float density; */
 };

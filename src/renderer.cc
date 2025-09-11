@@ -10,7 +10,6 @@
 #include "glad.h"
 
 Renderer::Renderer(std::vector<Vertex> data, size_t count) {
-
   GLuint indices[] = {0, 1, 2, 0, 3, 2};
   vertex_count = count;
 
@@ -32,10 +31,10 @@ Renderer::Renderer(std::vector<Vertex> data, size_t count) {
                         reinterpret_cast<void *>(offsetof(Vertex, x)));
   glEnableVertexAttribArray(0);
 
-  // density -> layout(location = 1)
-  glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                        reinterpret_cast<void *>(offsetof(Vertex, density)));
-  glEnableVertexAttribArray(1);
+  // no per-vertex density anymore (comes from texture)
+  // glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+  //                       reinterpret_cast<void *>(offsetof(Vertex, density)));
+  // glEnableVertexAttribArray(1);
 
   glBindVertexArray(0);
 }
@@ -43,11 +42,15 @@ Renderer::Renderer(std::vector<Vertex> data, size_t count) {
 void Renderer::draw(GLuint shader) {
   glBindVertexArray(VAO);
 
+  // Bind density to unit 0
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, densityTexture);
-
-  // set the uniform in the shader program passed in
   glUniform1i(glGetUniformLocation(shader, "uDensity"), 0);
+
+  // Bind obstacle to unit 1
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, obstacleTexture);
+  glUniform1i(glGetUniformLocation(shader, "uObstacle"), 1);
 
   glDrawArrays(GL_TRIANGLE_FAN, 0, vertex_count);
   glBindVertexArray(0);
@@ -57,7 +60,10 @@ Renderer::~Renderer() {
   glDeleteVertexArrays(1, &VAO);
   glDeleteBuffers(1, &VBO);
   glDeleteBuffers(1, &EBO);
+  glDeleteTextures(1, &densityTexture);
+  glDeleteTextures(1, &obstacleTexture);
 }
+
 void Renderer::createDensityTexture(int width, int height, float *densityData) {
   gridWidth = width;
   gridHeight = height;
@@ -76,67 +82,95 @@ void Renderer::createDensityTexture(int width, int height, float *densityData) {
   glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void Renderer::updateDensity(Kokkos::DualView<float**>& field){
-    // make sure host view is up-to-date
-    field.sync_host();
-    glBindTexture(GL_TEXTURE_2D, densityTexture);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, gridWidth, gridHeight,
-                    GL_RED, GL_FLOAT, field.h_view.data());
+void Renderer::createObstacleTexture(int width, int height, int *obstacleData) {
+  glGenTextures(1, &obstacleTexture);
+  glBindTexture(GL_TEXTURE_2D, obstacleTexture);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+  // Store as 32-bit signed integers
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_R32I, width, height, 0, GL_RED_INTEGER,
+               GL_INT, obstacleData);
+
+  glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void Renderer::updateDensity(Kokkos::DualView<float **> &field) {
+  field.sync_host();
+  glBindTexture(GL_TEXTURE_2D, densityTexture);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, gridWidth, gridHeight, GL_RED,
+                  GL_FLOAT, field.h_view.data());
+}
+
+void Renderer::updateObstacle(Kokkos::DualView<int **> &obs) {
+  obs.sync_host();
+
+  std::vector<int> hostBuffer(gridWidth * gridHeight);
+  for (int j = 0; j < gridHeight; j++) {
+    for (int i = 0; i < gridWidth; i++) {
+      hostBuffer[j * gridWidth + i] = obs.h_view(i, j);
+    }
+  }
+
+  glBindTexture(GL_TEXTURE_2D, obstacleTexture);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, gridWidth, gridHeight, GL_RED_INTEGER,
+                  GL_INT, hostBuffer.data());
 }
 
 unsigned int make_module(const std::string &filepath,
                          unsigned int module_type) {
-  std::ifstream file;
+  std::ifstream file(filepath);
   std::stringstream bufferdLines;
   std::string line;
 
-  file.open(filepath);
   while (std::getline(file, line)) {
     bufferdLines << line << "\n";
   }
   std::string shaderSource = bufferdLines.str();
-
   const char *sharderSrc = shaderSource.c_str();
 
-  bufferdLines.str("");
   file.close();
 
   unsigned int shaderModule = glCreateShader(module_type);
   glShaderSource(shaderModule, 1, &sharderSrc, NULL);
   glCompileShader(shaderModule);
+
   int success;
   glGetShaderiv(shaderModule, GL_COMPILE_STATUS, &success);
   if (!success) {
     char errorLog[1024];
     glGetShaderInfoLog(shaderModule, 1024, NULL, errorLog);
-    std::cout << "Shader Module Compilation eroor:\n" << errorLog << std::endl;
+    std::cout << "Shader Module Compilation error:\n" << errorLog << std::endl;
   }
   return shaderModule;
 }
+
 unsigned int Renderer::make_shader(const std::string &vertex_filepath,
                                    const std::string &fragment_filepath) {
-    std::vector<unsigned int> modules;
-    modules.push_back(make_module(vertex_filepath, GL_VERTEX_SHADER));
-    modules.push_back(make_module(fragment_filepath, GL_FRAGMENT_SHADER));
+  std::vector<unsigned int> modules;
+  modules.push_back(make_module(vertex_filepath, GL_VERTEX_SHADER));
+  modules.push_back(make_module(fragment_filepath, GL_FRAGMENT_SHADER));
 
-    unsigned int shaderProgram = glCreateProgram();
-    for (unsigned int shaderModule : modules) {
-        glAttachShader(shaderProgram, shaderModule);
-    }
-    glLinkProgram(shaderProgram);
+  unsigned int shaderProgram = glCreateProgram();
+  for (unsigned int shaderModule : modules) {
+    glAttachShader(shaderProgram, shaderModule);
+  }
+  glLinkProgram(shaderProgram);
 
-    int success;
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success); // <-- use glGetProgramiv
-    if (!success) {
-        char errorLog[1024];
-        glGetProgramInfoLog(shaderProgram, 1024, NULL, errorLog);
-        std::cout << "Shader Program Linking error:\n" << errorLog << std::endl;
-    }
+  int success;
+  glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+  if (!success) {
+    char errorLog[1024];
+    glGetProgramInfoLog(shaderProgram, 1024, NULL, errorLog);
+    std::cout << "Shader Program Linking error:\n" << errorLog << std::endl;
+  }
 
-    for (unsigned int shaderModule : modules) {
-        glDeleteShader(shaderModule);
-    }
+  for (unsigned int shaderModule : modules) {
+    glDeleteShader(shaderModule);
+  }
 
-    return shaderProgram;
+  return shaderProgram;
 }
-

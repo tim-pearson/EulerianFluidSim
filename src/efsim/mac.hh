@@ -8,6 +8,7 @@
 class Mac {
 public:
   Mac();
+
   Kokkos::DualView<float **> xgrid;
   Kokkos::DualView<float **> ygrid;
   Kokkos::DualView<int **> sgrid;
@@ -23,6 +24,53 @@ public:
   void init();
   void sync_host();
 
+  
+  // Example shape functions
+  KOKKOS_INLINE_FUNCTION
+  int AirfoilShape(int i, int j, int WIDTH, int HEIGHT) {
+    const double chord = WIDTH * 0.5;
+    const double x0 = WIDTH / 4;
+    const double y0 = HEIGHT / 2;
+    const double t = 0.12;
+
+    double xf = (i - x0) / chord;
+    if (xf < 0.0 || xf > 1.0)
+      return 1; // fluid outside airfoil
+
+    double yt = 5 * t * chord *
+                (0.2969 * sqrt(xf) - 0.1260 * xf - 0.3516 * xf * xf +
+                 0.2843 * xf * xf * xf - 0.1015 * xf * xf * xf * xf);
+    double y_top = y0 + yt;
+    double y_bot = y0 - yt;
+    double y_phys = j;
+
+    return (y_phys >= y_bot && y_phys <= y_top) ? 0 : 1; // 0=solid, 1=fluid
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  int ArrowShape(int i, int j, int WIDTH, int HEIGHT) {
+    int ci = WIDTH / 2;
+    int cj = HEIGHT / 2;
+    // Simple arrow tip pointing right
+    if (i > ci && abs(j - cj) <= (i - ci) / 2)
+      return 0;
+    return 1;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  int CupShape(int i, int j, int WIDTH, int HEIGHT) {
+    int ci = WIDTH / 2;
+    int cj = HEIGHT / 2;
+    int radius = HEIGHT / 4;
+    int dx = i - ci;
+    int dy = j - cj;
+    if (dx * dx + dy * dy <= radius * radius && dy >= 0)
+      return 0; // half-circle cup
+    return 1;
+  }
+
+  // Flexible init function
+  
 private:
   template <typename T>
   static KOKKOS_FUNCTION float interpolateX(T u, float px, float py) {

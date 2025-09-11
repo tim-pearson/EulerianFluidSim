@@ -8,11 +8,12 @@
 #include "consts.hh"
 #include "efsim/utils.hh"
 
+
 Mac::Mac()
     : sgrid("S grid", HEIGHT + 2, WIDTH + 2),
       xgrid("X grid", HEIGHT, WIDTH + 1), ygrid("Y grid", HEIGHT + 1, WIDTH),
       xtmp("Scalar xtmp", HEIGHT, WIDTH + 1),
-      ytmp("Scalar ytmp", HEIGHT + 1, WIDTH) {
+      ytmp("Scalar ytmp", HEIGHT + 1, WIDTH)  {
   init();
 }
 
@@ -24,32 +25,12 @@ void Mac::init() {
   int cj = HEIGHT / 2 + 1;
 
   Kokkos::parallel_for(
-      "Setup S grid",
-      MDPOL(HEIGHT + 2, WIDTH + 2), KOKKOS_LAMBDA(const int j, const int i) {
+      "Setup S grid with shape", MDPOL(HEIGHT + 2, WIDTH + 2),
+      KOKKOS_LAMBDA(const int j, const int i) {
         if (j == 0 || j == HEIGHT + 1 || i == 0 || i == WIDTH + 1) {
-          s(j, i) = 0; // boundary
+          s(j, i) = 0; // domain boundary
         } else {
-          s(j, i) = 1; // fluid by default
-
-          for (int w =0; w < 20; w++)
-
-          for (int k = 0; k < 50; ++k) {
-            int x = ci - k + w;
-
-            // Make the tip two cells wide
-            if (k == 0) {
-              if ((j == cj && i == x) || (j == cj - 1 && i == x)) {
-                s(j, i) = 0; // tip
-              }
-            } else {
-              int top_y = cj - k - 1; // adjusted for 2-wide tip
-              int bot_y = cj + k;
-
-              if ((j == top_y && i == x) || (j == bot_y && i == x)) {
-                s(j, i) = 0; // upper and lower arms
-              }
-            }
-          }
+          s(j, i) = AirfoilShape(i, j, WIDTH, HEIGHT); // fluid or solid based on shape
         }
       });
 

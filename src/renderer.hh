@@ -8,34 +8,31 @@
 
 class Renderer {
 public:
-  // old constructor: keep if you want points
   Renderer(std::vector<Vertex> data, size_t count);
-
-  // draw the mesh
-  void draw(GLuint shader);
-
-  // destructor
   ~Renderer();
 
-  // new function to upload a density grid
+  // Draw the mesh with currently bound shader
+  void draw(GLuint shader);
+
+  // Create / update textures
   void createDensityTexture(int width, int height, float *densityData);
-
-  // optional: update the density per frame
-
+  void createObstacleTexture(int width, int height, int *obstacleData);
   void updateDensity(Kokkos::DualView<float **> &field);
+  void updateObstacle(Kokkos::DualView<int **> &obs);
 
-  void updateDensity(std::vector<float> &densityData, int width, int height,
-                     float time);
+  // Compile and link shaders
   unsigned int make_shader(const std::string &vertex_filepath,
                            const std::string &fragment_filepath);
 
 private:
-  unsigned int VBO, VAO, EBO, vertex_count;
+  GLuint VAO, VBO, EBO;
+  GLuint densityTexture;
+  GLuint obstacleTexture;
 
-  // new attributes
-  GLuint densityTexture;     // texture handle
-  int gridWidth, gridHeight; // dimensions of density grid
-
-  std::vector<Vertex> data;
-  void setData();
+  size_t vertex_count;
+  int gridWidth;
+  int gridHeight;
 };
+
+// Standalone helper for compiling shader modules
+unsigned int make_module(const std::string &filepath, unsigned int module_type);

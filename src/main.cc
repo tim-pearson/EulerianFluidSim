@@ -66,16 +66,20 @@ int main() {
       }
     }
     std::vector<Vertex> vertexes = {
-        {-1.0f, -1.0f, 0.0f}, // bottom-left
-        {1.0f, -1.0f, 0.0f},  // bottom-right
-        {1.0f, 1.0f, 0.0f},   // top-right
-        {-1.0f, 1.0f, 0.0f}   // top-left
+        {-1.0f, -1.0f}, // bottom-left
+        {1.0f, -1.0f},  // bottom-right
+        {1.0f, 1.0f},   // top-right
+        {-1.0f, 1.0f}   // top-left
     };
 
     Renderer renderer = *new Renderer(vertexes, vertexes.size());
 
+    // Create density texture
     renderer.createDensityTexture(WIDTH, HEIGHT,
                                   sim.density.field.h_view.data());
+
+    // 🔥 Create obstacle texture
+    renderer.createObstacleTexture(WIDTH, HEIGHT, sim.mac.sgrid.h_view.data());
 
     unsigned int shader = renderer.make_shader("../src/shaders/default.vert",
                                                "../src/shaders/default.frag");
@@ -83,29 +87,23 @@ int main() {
     float lastTime = (float)glfwGetTime();
 
     while (!glfwWindowShouldClose(window)) {
-      // Current time
       float currentTime = (float)glfwGetTime();
       float deltaTime = currentTime - lastTime;
       lastTime = currentTime;
 
-      // Start new ImGui frame
       gui.draw();
-
-      // Update FPS in ControlPanel
       ctrlPanel.fps = ImGui::GetIO().Framerate;
 
-      // Step simulation using real deltaTime
       sim.step(deltaTime, ctrlPanel);
 
-      // Update density texture
+      // ✅ Update density and obstacle textures
       renderer.updateDensity(sim.density.field);
+      renderer.updateObstacle(sim.mac.sgrid);
 
-      // Render scene
       glClear(GL_COLOR_BUFFER_BIT);
       glUseProgram(shader);
       renderer.draw(shader);
 
-      // Render ImGui
       ImGui::Render();
       ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
