@@ -4,7 +4,6 @@
 
 struct ControlPanel {
   float velocity = 3.0f;
-  float waveSpeed = 2.0f;
   float dt = 0.2f;
   bool showAllVel = false;
   bool showAllDensities = true;
@@ -32,7 +31,6 @@ struct ControlPanel {
 
     ImGui::Begin("Left Panel", nullptr, window_flags);
 
-    ImGui::SliderFloat("Wave Speed", &waveSpeed, 0, 2.0f);
     ImGui::Text("[Simulator]");
     ImGui::Text("FPS: %0.1f", fps);
     ImGui::SliderFloat("Gravity", &gravity, -50.0f, 50.0f);
@@ -44,7 +42,7 @@ struct ControlPanel {
     ImGui::Text("[Velocity]");
     ImGui::Checkbox("Show All Vel", &showAllVel);
     ImGui::Checkbox("Opti Div", &opti_divergence);
-    ImGui::SliderFloat("Velocity", &velocity, -100.0f, 200.0f);
+    ImGui::SliderFloat("Velocity", &velocity, 0.0f, 200.0f);
     ImGui::SliderFloat("Velocity Draw Ratio", &velocityDrawRatio, 0.1f, 5.0f);
     ImGui::Separator();
 
