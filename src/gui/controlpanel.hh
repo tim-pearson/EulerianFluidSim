@@ -4,7 +4,6 @@
 
 struct ControlPanel {
   float velocity = 3.0f;
-  float waveSpeed = 2.0f;
   float dt = 0.2f;
   bool showAllVel = false;
   bool showAllDensities = true;
@@ -32,7 +31,6 @@ struct ControlPanel {
 
     ImGui::Begin("Left Panel", nullptr, window_flags);
 
-    ImGui::SliderFloat("Wave Speed", &waveSpeed, 0, 2.0f);
     ImGui::Text("[Simulator]");
     ImGui::Text("FPS: %0.1f", fps);
     ImGui::SliderFloat("Gravity", &gravity, -50.0f, 50.0f);
@@ -44,7 +42,7 @@ struct ControlPanel {
     ImGui::Text("[Velocity]");
     ImGui::Checkbox("Show All Vel", &showAllVel);
     ImGui::Checkbox("Opti Div", &opti_divergence);
-    ImGui::SliderFloat("Velocity", &velocity, 0, 200.0f);
+    ImGui::SliderFloat("Velocity", &velocity, 0.0f, 200.0f);
     ImGui::SliderFloat("Velocity Draw Ratio", &velocityDrawRatio, 0.1f, 5.0f);
     ImGui::Separator();
 
@@ -57,13 +55,10 @@ struct ControlPanel {
     int h = int(HEIGHT / 2);
     densityHeight += densityHeight % 2;
     ImGui::Text("[Density]");
-    ImGui::Checkbox("Show All Densities", &showAllDensities);
     ImGui::SliderInt("Density Height", &densityHeight, -7, h);
     ImGui::SliderInt("Density Consentration", &densityConsentration, -7, h);
 
-    static const char *colorMapNames[] = {"Original", "CoolWarm", "Viridis",
-                                          "Rainbow"};
-
+    
     ImGui::Separator();
     ImGui::End();
     ImGui::PopStyleVar();

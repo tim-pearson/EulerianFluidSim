@@ -1,5 +1,6 @@
 #include "mac.hh"
 #include "consts.hh"
+#include "line_segment.hh"
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Macros.hpp>
@@ -32,7 +33,7 @@ void Mac::init() {
 
           for (int w =0; w < 20; w++)
 
-          for (int k = 0; k < 200; ++k) {
+          for (int k = 0; k < 50; ++k) {
             int x = ci - k + w;
 
             // Make the tip two cells wide
@@ -86,31 +87,20 @@ void Mac::toggleWall(int i, int j) {
   Kokkos::fence();
 }
 
-/* void Mac::drawRect(int i, int j, int r, int g, int b) { */
+/* void Mac::drawInterp(float x, float y, int r, int g, int b, float factor, */
+/*                      std::vector<LineSegment> &lines) { */
+/*     auto inter = interpolateHost(x, y); */
+/*     float x2 = x + inter.first * factor; */
+/*     float y2 = y + inter.second * factor; */
 
-/*   auto renderer = SDL_GetRenderer(SDL_GL_GetCurrentWindow()); */
-/*   static SDL_Rect rect; */
-/*   rect.x = i * CELL_SIZE; */
-/*   rect.y = j * CELL_SIZE; */
+/*     LineSegment seg; */
+/*     seg.x1 = x / WIDTH  * 2.0f - 1.0f;  // normalize to NDC [-1,1] */
+/*     seg.y1 = y / HEIGHT * 2.0f - 1.0f; */
+/*     seg.x2 = x2 / WIDTH  * 2.0f - 1.0f; */
+/*     seg.y2 = y2 / HEIGHT * 2.0f - 1.0f; */
+/*     seg.r = r / 255.0f; */
+/*     seg.g = g / 255.0f; */
+/*     seg.b = b / 255.0f; */
 
-/*   rect.w = CELL_SIZE; */
-/*   rect.h = CELL_SIZE; */
-
-/*   SDL_SetRenderDrawColor(renderer, r, g, b, 255); */
-/*   SDL_RenderFillRect(renderer, &rect); */
-/* } */
-
-/* void Mac::drawLine(float x1, float y1, float x2, float y2, int r, int g, */
-/*                    int b) { */
-/*   auto renderer = SDL_GetRenderer(SDL_GL_GetCurrentWindow()); */
-/*   SDL_SetRenderDrawColor(renderer, r, g, b, 255); */
-/*   SDL_RenderDrawLine(renderer, x1 * CELL_SIZE, y1 * CELL_SIZE, x2 * CELL_SIZE, */
-/*                      y2 * CELL_SIZE); */
-/* } */
-
-/* void Mac::drawInterp(float x, float y, int r, int g, int b, float factor) { */
-/*   auto inter = interpolateHost(x, y); */
-/*   float x2 = x + inter.first * factor; */
-/*   float y2 = y + inter.second * factor; */
-/*   drawLine(x, y, x2, y2, r, g, b); */
+/*     lines.push_back(seg); */
 /* } */

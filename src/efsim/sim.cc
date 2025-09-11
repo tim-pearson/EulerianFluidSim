@@ -20,11 +20,11 @@ void Sim::setupInitialDensity(int width, int consentration) {
 
   if (width < 0)
     for (int j = 0; j < HEIGHT; j += 4)
-      density.field.h_view(HEIGHT / 2 + j + 1, 0) = consentration;
+      density.field.h_view(HEIGHT / 2 + j + 1, 10) = consentration;
   else
     for (int j = 0; j < width; j++) {
-      density.field.h_view(HEIGHT / 2 + j, 0) = consentration;
-      density.field.h_view(HEIGHT / 2 - j, 0) = consentration;
+      density.field.h_view(HEIGHT / 2 + j, 10) = consentration;
+      density.field.h_view(HEIGHT / 2 - j, 10) = consentration;
     }
   density.field.h_view(HEIGHT / 2, 0) = consentration;
   density.field.modify_host();
@@ -34,15 +34,19 @@ void Sim::setupInitialDensity(int width, int consentration) {
 
 void Sim::addWall(int x, int y) { mac.toggleWall(x, y); }
 
+
+
 void Sim::step(float deltaTime, ControlPanel &ctrlPanel) {
   setupBoundaryConditions(ctrlPanel.velocity);
   setupInitialDensity(ctrlPanel.densityHeight, ctrlPanel.densityConsentration);
+
   if (ctrlPanel.opti_divergence)
     clear_divergence_opti(mac, 40, OVERRELAXATION);
   else
     clear_divergence(mac, 40);
 
-  advect(mac, deltaTime, ctrlPanel.gravity);
+  // Temporarily set gravity to zero to debug lateral motion
+  advect(mac, deltaTime, 0.0f);
   density.advect(mac, ctrlPanel.dt);
   mac.sync_host();
 }
