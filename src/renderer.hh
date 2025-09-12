@@ -24,10 +24,10 @@ public:
   unsigned int make_shader(const std::string &vertex_filepath,
                            const std::string &fragment_filepath);
 
+  GLuint obstacleTexture;
 private:
   GLuint VAO, VBO, EBO;
   GLuint densityTexture;
-  GLuint obstacleTexture;
 
   size_t vertex_count;
   int gridWidth;

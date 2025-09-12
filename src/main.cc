@@ -33,59 +33,57 @@ void updateDensity(std::vector<float> &densityData, int width, int height,
     }
   }
 }
-
 int main() {
-
   Kokkos::initialize();
   {
     GLFWwindow *window;
     ControlPanel ctrlPanel;
     Sim sim;
+
     if (!glfwInit()) {
       return -1;
     }
-    window = glfwCreateWindow(1024, 1024, "Window", NULL, NULL);
+    window = glfwCreateWindow(1024, 1024, "Window", nullptr, nullptr);
+    if (!window) {
+      glfwTerminate();
+      return -1;
+    }
     glfwMakeContextCurrent(window);
+
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-      std::cout << "Couldnt load opengl" << '\n';
+      std::cerr << "Couldn’t load OpenGL\n";
       glfwTerminate();
       return -1;
     }
 
-    GUI gui = GUI(ctrlPanel, window);
+    GUI gui(ctrlPanel, window);
     gui.setup();
 
-    std::vector<float> densityData(WIDTH * HEIGHT);
-
-    // Fill with a diagonal gradient (0.0 → 1.0)
-    for (int j = 0; j < HEIGHT; ++j) {
-      for (int i = 0; i < WIDTH; ++i) {
-        float x = float(i) / float(WIDTH - 1);
-        float y = float(j) / float(HEIGHT - 1);
-        densityData[j * WIDTH + i] = (x + y) * 0.5f;
-      }
-    }
-    std::vector<Vertex> vertexes = {
+    std::vector<Vertex> vertices = {
         {-1.0f, -1.0f}, // bottom-left
         {1.0f, -1.0f},  // bottom-right
         {1.0f, 1.0f},   // top-right
         {-1.0f, 1.0f}   // top-left
     };
 
-    Renderer renderer = *new Renderer(vertexes, vertexes.size());
+    Renderer renderer(vertices, vertices.size());
 
-    // Create density texture
+    // ✅ Create density + obstacle textures once
     renderer.createDensityTexture(WIDTH, HEIGHT,
                                   sim.density.field.h_view.data());
-
-    // 🔥 Create obstacle texture
     renderer.createObstacleTexture(WIDTH, HEIGHT, sim.mac.sgrid.h_view.data());
+
+    glBindTexture(GL_TEXTURE_2D, renderer.obstacleTexture);
 
     unsigned int shader = renderer.make_shader("../src/shaders/default.vert",
                                                "../src/shaders/default.frag");
 
-    float lastTime = (float)glfwGetTime();
 
+
+    sim.mac.sync_host();
+    renderer.updateObstacle(sim.mac.sgrid);
+
+    float lastTime = (float)glfwGetTime();
     while (!glfwWindowShouldClose(window)) {
       float currentTime = (float)glfwGetTime();
       float deltaTime = currentTime - lastTime;
@@ -96,12 +94,13 @@ int main() {
 
       sim.step(deltaTime, ctrlPanel);
 
-      // ✅ Update density and obstacle textures
+      // ✅ Only update density each frame
       renderer.updateDensity(sim.density.field);
-      renderer.updateObstacle(sim.mac.sgrid);
+      /* renderer.updateObstacle(sim.mac.sgrid); */
 
       glClear(GL_COLOR_BUFFER_BIT);
       glUseProgram(shader);
+
       renderer.draw(shader);
 
       ImGui::Render();
