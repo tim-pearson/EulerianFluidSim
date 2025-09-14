@@ -4,17 +4,43 @@
 
 Sim::Sim() : mac(), density() {}
 
-void Sim::setupBoundaryConditions(float velocity) {
+void Sim::setupBoundaryConditions(float inflowVelocity, float inflowDensity) {
   auto xview = mac.xgrid.d_view;
+  auto yview = mac.ygrid.d_view;
   auto dview = density.field.d_view;
 
+  // Left wall: inlet
   Kokkos::parallel_for(
-      HEIGHT, KOKKOS_LAMBDA(const int i) {
-        /* xview(i, 0) = velocity; */
-        xview(HEIGHT / 2 - 4, WIDTH / 2) = velocity;
-        /* xview(i, xview.extent(1) -1) = velocity; */
-        /* dview(i, dview.extent(1) - 1) = 0; */
+      HEIGHT, KOKKOS_LAMBDA(int j) {
+        xview(j, 0) = inflowVelocity; // fluid enters
+        /* dview(j, 0) = inflowDensity;  // inject density */
       });
+  Kokkos::parallel_for(
+      HEIGHT, KOKKOS_LAMBDA(int j) {
+        dview(j %100, 0) = inflowDensity;  // inject density
+      });
+
+  Kokkos::parallel_for(
+      HEIGHT, KOKKOS_LAMBDA(int j) {
+        for (int i = 0; i < 3; ++i) { // first 3 columns
+          xview(j, i) = inflowVelocity;
+        }
+      });
+
+  // Right wall: outlet (free-flow)
+  Kokkos::parallel_for(
+      HEIGHT, KOKKOS_LAMBDA(int j) {
+        xview(j, WIDTH - 1) = xview(j, WIDTH - 2);
+        dview(j, WIDTH - 1) = dview(j, WIDTH - 2);
+      });
+
+  // Top & bottom walls: solid
+  Kokkos::parallel_for(
+      WIDTH, KOKKOS_LAMBDA(int i) {
+        yview(0, i) = 0.0f;      // bottom
+        yview(HEIGHT, i) = 0.0f; // top
+      });
+
   density.sync_host();
 }
 
@@ -35,44 +61,23 @@ void Sim::setupInitialDensity(int width, int consentration) {
 }
 
 void Sim::addWall(int x, int y) { mac.toggleWall(x, y); }
-
 void Sim::step(float deltaTime, ControlPanel &ctrlPanel) {
-  setupBoundaryConditions(ctrlPanel.velocity);
+  setupBoundaryConditions(ctrlPanel.velocity, 100.0f); // now handles air tunnel
   setupInitialDensity(ctrlPanel.densityHeight, ctrlPanel.densityConsentration);
-
-  /* if (ctrlPanel.opti_divergence) */
-  /*   clear_divergence_opti(mac, 40, OVERRELAXATION); */
-  /* else */
-  /*   clear_divergence(mac, 40); */
 
   compute_divergence(mac);
 
+  // Debug divergence in center
   auto div = mac.div;
-  /* float divNorm = 0.0f; */
-  /* Kokkos::parallel_reduce( */
-  /*     "divNorm", */
-  /*     Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {HEIGHT, WIDTH}), */
-  /*     KOKKOS_LAMBDA(int j, int i, float &local) { */
-  /*       local += div(j, i) * div(j, i); */
-  /*     }, */
-  /*     divNorm); */
-
-  /* std::cout << "Divergence norm = " << divNorm << std::endl; */
   for (int j = HEIGHT / 2 - 1; j <= HEIGHT / 2 + 1; ++j)
     for (int i = WIDTH / 2 - 1; i <= WIDTH / 2 + 1; ++i)
       std::cout << "div(" << j << "," << i << ")=" << div.h_view(j, i) << "\n";
 
   solve_pressure(mac, 100); // ~40 Jacobi iterations
-                            //
-  std::cout << "p(mid)=" << mac.pressure.h_view(HEIGHT / 2, WIDTH / 2)
-            << std::endl;
   subtract_pressure_gradient(mac);
 
-  for (int j = HEIGHT / 2 - 1; j <= HEIGHT / 2 + 1; ++j)
-    for (int i = WIDTH / 2 - 1; i <= WIDTH / 2 + 1; ++i)
-      std::cout << "div(" << j << "," << i << ")=" << div.h_view(j, i) << "\n";
-  /* // Temporarily set gravity to zero to debug lateral motion */
   advect(mac, deltaTime, ctrlPanel.gravity);
   density.advect(mac, ctrlPanel.dt, ctrlPanel.diffusion);
+
   mac.sync_host();
 }
