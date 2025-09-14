@@ -30,8 +30,8 @@ void Sim::setupBoundaryConditions(float inflowVelocity, float inflowDensity) {
   // Right wall: outlet (free-flow)
   Kokkos::parallel_for(
       HEIGHT, KOKKOS_LAMBDA(int j) {
-        xview(j, WIDTH - 1) = xview(j, WIDTH - 2);
-        dview(j, WIDTH - 1) = dview(j, WIDTH - 2);
+        xview(j, WIDTH - 2) = xview(j, WIDTH - 3);
+        dview(j, WIDTH - 2) = dview(j, WIDTH - 3);
       });
 
   // Top & bottom walls: solid
