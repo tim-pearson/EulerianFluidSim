@@ -7,6 +7,7 @@
 #include "consts.hh"
 #include "efsim/mac.hh"
 #include "efsim/utils.hh"
+#include "gui/controlpanel.hh"
 
 ScalarField::ScalarField()
     : field("Scalar Field", HEIGHT, WIDTH), tmp("Scalar tmp", HEIGHT, WIDTH) {
@@ -68,7 +69,7 @@ float ScalarField::interpolateHost(float px, float py) {
   return ScalarField::interpolate(field.h_view, px, py);
 }
 
-void ScalarField::advect(Mac &mac, float deltaTime) {
+void ScalarField::advect(Mac &mac, float deltaTime, bool diffuse) {
   auto f = field.d_view;
   auto t = tmp;
   auto s = mac.sgrid.d_view;
@@ -154,7 +155,6 @@ void ScalarField::advect(Mac &mac, float deltaTime) {
         px = Kokkos::clamp(px, 0.0f, WIDTH - 1.0f);
         py = Kokkos::clamp(py, 0.0f, HEIGHT - 1.0f);
 
-
         int i0 = (int)Kokkos::floor(px - 0.5f);
         int j0 = (int)Kokkos::floor(py - 0.5f);
 
@@ -178,5 +178,23 @@ void ScalarField::advect(Mac &mac, float deltaTime) {
       });
 
   Kokkos::deep_copy(f, t);
+
+  if (diffuse) {
+    auto fnew = Kokkos::View<float **>("fnew", HEIGHT, WIDTH);
+
+    for (int iter = 0; iter < 10; iter++) {
+      Kokkos::parallel_for(
+          "Diffuse Scalar", MDPOL(HEIGHT, WIDTH), KOKKOS_LAMBDA(int j, int i) {
+            if (i > 0 && i < WIDTH - 1 && j > 0 && j < HEIGHT - 1) {
+              fnew(j, i) = (f(j, i) + f(j - 1, i) + f(j + 1, i) + f(j, i - 1) +
+                            f(j, i + 1)) /
+                           5.0f;
+            } else {
+              fnew(j, i) = f(j, i); // keep boundaries simple
+            }
+          });
+      Kokkos::deep_copy(f, fnew);
+    }
+  }
   Kokkos::fence();
 }

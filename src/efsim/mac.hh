@@ -12,8 +12,12 @@ public:
   Kokkos::DualView<float **> xgrid;
   Kokkos::DualView<float **> ygrid;
   Kokkos::DualView<int **> sgrid;
-  Kokkos::View<float **> xtmp; // not initialized
-  Kokkos::View<float **> ytmp; // not initialized
+  Kokkos::DualView<float **> xtmp; // not initialized
+  Kokkos::DualView<float **> ytmp; // not initialized
+  Kokkos::DualView<float **> div; // not initialized
+  Kokkos::DualView<float **> pressure; // not initialized
+  Kokkos::DualView<float **> pressure_tmp; // not initialized
+                               //
 
   // UI
   void drawInterp(float i, float j, int r, int g, int b, float factor);

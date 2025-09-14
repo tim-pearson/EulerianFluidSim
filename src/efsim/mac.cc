@@ -8,12 +8,14 @@
 #include "consts.hh"
 #include "efsim/utils.hh"
 
-
 Mac::Mac()
     : sgrid("S grid", HEIGHT + 2, WIDTH + 2),
       xgrid("X grid", HEIGHT, WIDTH + 1), ygrid("Y grid", HEIGHT + 1, WIDTH),
       xtmp("Scalar xtmp", HEIGHT, WIDTH + 1),
-      ytmp("Scalar ytmp", HEIGHT + 1, WIDTH)  {
+      ytmp("Scalar ytmp", HEIGHT + 1, WIDTH), div("Divergence", HEIGHT, WIDTH),
+      pressure("Pressure", HEIGHT, WIDTH),
+      pressure_tmp("PRessure tmp", HEIGHT, WIDTH) {
+
   init();
 }
 
@@ -27,10 +29,11 @@ void Mac::init() {
   Kokkos::parallel_for(
       "Setup S grid with shape", MDPOL(HEIGHT + 2, WIDTH + 2),
       KOKKOS_LAMBDA(const int j, const int i) {
-        if (j == 0 || j == HEIGHT + 1 || i == 0 || i == WIDTH + 1) {
+        if (j == 0 || j == HEIGHT - 1 || i == 0 || i == WIDTH - 1) {
           s(j, i) = 0; // domain boundary
         } else {
-          s(j, i) = AirfoilShape(i, j, WIDTH, HEIGHT); // fluid or solid based on shape
+          s(j, i) = AirfoilShape(i, j, WIDTH,
+                                 HEIGHT); // fluid or solid based on shape
         }
       });
 

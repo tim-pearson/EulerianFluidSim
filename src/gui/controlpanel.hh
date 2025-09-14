@@ -6,7 +6,7 @@ struct ControlPanel {
   float velocity = 3.0f;
   float dt = 0.2f;
   bool showAllVel = false;
-  bool showAllDensities = true;
+  bool diffusion = false;
   float velocityDrawRatio = 1.0f;
   int densityHeight = 1;
   int densityConsentration = 250;
@@ -42,7 +42,7 @@ struct ControlPanel {
     ImGui::Text("[Velocity]");
     ImGui::Checkbox("Show All Vel", &showAllVel);
     ImGui::Checkbox("Opti Div", &opti_divergence);
-    ImGui::SliderFloat("Velocity", &velocity, 0.0f, 200.0f);
+    ImGui::SliderFloat("Velocity", &velocity, 0.0f, 300.0f);
     ImGui::SliderFloat("Velocity Draw Ratio", &velocityDrawRatio, 0.1f, 5.0f);
     ImGui::Separator();
 
@@ -57,6 +57,7 @@ struct ControlPanel {
     ImGui::Text("[Density]");
     ImGui::SliderInt("Density Height", &densityHeight, -7, h);
     ImGui::SliderInt("Density Consentration", &densityConsentration, -7, h);
+    ImGui::Checkbox("Diffusion", &diffusion);
 
     
     ImGui::Separator();
