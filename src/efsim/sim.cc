@@ -13,7 +13,6 @@ void Sim::setupBoundaryConditions(float inflowVelocity, float inflowDensity) {
   Kokkos::parallel_for(
       HEIGHT, KOKKOS_LAMBDA(int j) {
         xview(j, 0) = inflowVelocity; // fluid enters
-        /* dview(j, 0) = inflowDensity;  // inject density */
       });
   Kokkos::parallel_for(
       20, KOKKOS_LAMBDA(int j) {
