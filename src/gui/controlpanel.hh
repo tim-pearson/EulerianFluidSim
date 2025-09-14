@@ -6,7 +6,7 @@ struct ControlPanel {
   float velocity = 3.0f;
   float dt = 0.2f;
   bool showAllVel = false;
-  bool diffusion = false;
+  bool pressure = false;
   float velocityDrawRatio = 1.0f;
   int densityHeight = 1;
   int densityConsentration = 20;
@@ -33,7 +33,7 @@ struct ControlPanel {
 
     ImGui::Text("[Simulator]");
     ImGui::Text("FPS: %0.1f", fps);
-    ImGui::SliderFloat("Gravity", &gravity, -50.0f, 50.0f);
+    ImGui::SliderFloat("Gravity", &gravity, -10.0f, 10.0f);
     ImGui::SliderFloat("Dt", &dt, 0.001, 0.4);
     ImGui::Checkbox("Pause", &pause);
     ImGui::Checkbox("Limit FPS", &limitFps);
@@ -57,7 +57,7 @@ struct ControlPanel {
     ImGui::Text("[Density]");
     ImGui::SliderInt("Density Height", &densityHeight, -7, h);
     ImGui::SliderInt("Density Consentration", &densityConsentration, -7, h);
-    ImGui::Checkbox("Diffusion", &diffusion);
+    ImGui::Checkbox("Pressure", &pressure);
 
     
     ImGui::Separator();

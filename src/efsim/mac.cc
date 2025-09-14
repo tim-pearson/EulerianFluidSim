@@ -50,9 +50,13 @@ void Mac::sync_host() {
   xgrid.modify_device();
   ygrid.modify_device();
   sgrid.modify_device();
+  pressure.modify_device();
+  div.modify_device();
   xgrid.sync_host();
   ygrid.sync_host();
   sgrid.sync_host();
+  pressure.sync_host();
+  div.sync_host();
 }
 
 void Mac::toggleWall(int i, int j) {
@@ -70,20 +74,4 @@ void Mac::toggleWall(int i, int j) {
   Kokkos::fence();
 }
 
-/* void Mac::drawInterp(float x, float y, int r, int g, int b, float factor, */
-/*                      std::vector<LineSegment> &lines) { */
-/*     auto inter = interpolateHost(x, y); */
-/*     float x2 = x + inter.first * factor; */
-/*     float y2 = y + inter.second * factor; */
 
-/*     LineSegment seg; */
-/*     seg.x1 = x / WIDTH  * 2.0f - 1.0f;  // normalize to NDC [-1,1] */
-/*     seg.y1 = y / HEIGHT * 2.0f - 1.0f; */
-/*     seg.x2 = x2 / WIDTH  * 2.0f - 1.0f; */
-/*     seg.y2 = y2 / HEIGHT * 2.0f - 1.0f; */
-/*     seg.r = r / 255.0f; */
-/*     seg.g = g / 255.0f; */
-/*     seg.b = b / 255.0f; */
-
-/*     lines.push_back(seg); */
-/* } */

@@ -69,7 +69,7 @@ float ScalarField::interpolateHost(float px, float py) {
   return ScalarField::interpolate(field.h_view, px, py);
 }
 
-void ScalarField::advect(Mac &mac, float deltaTime, bool diffuse) {
+void ScalarField::advect(Mac &mac, float deltaTime) {
   auto f = field.d_view;
   auto t = tmp;
   auto s = mac.sgrid.d_view;
@@ -179,22 +179,6 @@ void ScalarField::advect(Mac &mac, float deltaTime, bool diffuse) {
 
   Kokkos::deep_copy(f, t);
 
-  if (diffuse) {
-    auto fnew = Kokkos::View<float **>("fnew", HEIGHT, WIDTH);
-
-    for (int iter = 0; iter < 10; iter++) {
-      Kokkos::parallel_for(
-          "Diffuse Scalar", MDPOL(HEIGHT, WIDTH), KOKKOS_LAMBDA(int j, int i) {
-            if (i > 0 && i < WIDTH - 1 && j > 0 && j < HEIGHT - 1) {
-              fnew(j, i) = (f(j, i) + f(j - 1, i) + f(j + 1, i) + f(j, i - 1) +
-                            f(j, i + 1)) /
-                           5.0f;
-            } else {
-              fnew(j, i) = f(j, i); // keep boundaries simple
-            }
-          });
-      Kokkos::deep_copy(f, fnew);
-    }
-  }
+ 
   Kokkos::fence();
 }

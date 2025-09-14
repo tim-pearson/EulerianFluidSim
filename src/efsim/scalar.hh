@@ -12,7 +12,6 @@ public:
   void sync_host();
   void advect(Mac &mac, float deltaTime);
 
-  void advect(Mac &mac, float deltaTime, bool diffuse);
   float interpolateHost(float px, float py);
 
   void init();

@@ -72,6 +72,8 @@ int main() {
     renderer.createDensityTexture(WIDTH, HEIGHT,
                                   sim.density.field.h_view.data());
     renderer.createObstacleTexture(WIDTH, HEIGHT, sim.mac.sgrid.h_view.data());
+    renderer.createPressureTexture(WIDTH, HEIGHT,
+                                   sim.mac.pressure.h_view.data());
 
     glBindTexture(GL_TEXTURE_2D, renderer.obstacleTexture);
 
@@ -94,12 +96,13 @@ int main() {
 
       sim.step(deltaTime, ctrlPanel);
 
-      // ✅ Only update density each frame
+      renderer.updatePressure(sim.mac.pressure);
       renderer.updateDensity(sim.density.field);
-      /* renderer.updateObstacle(sim.mac.sgrid); */
 
       glClear(GL_COLOR_BUFFER_BIT);
       glUseProgram(shader);
+
+      glUniform1i(glGetUniformLocation(shader, "uMode"), ctrlPanel.pressure);
 
       renderer.draw(shader);
 
