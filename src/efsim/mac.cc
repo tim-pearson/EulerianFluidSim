@@ -29,7 +29,7 @@ void Mac::init() {
   Kokkos::parallel_for(
       "Setup S grid with shape", MDPOL(HEIGHT + 2, WIDTH + 2),
       KOKKOS_LAMBDA(const int j, const int i) {
-        if (j <= 2 || j == HEIGHT - 1 || i == 0 || i == WIDTH - 1) {
+        if (j == 0|| j == HEIGHT + 1 || i == 0 || i == WIDTH + 1) {
           s(j, i) = 0; // domain boundary
         } else {
           s(j, i) = 1;

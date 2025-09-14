@@ -16,8 +16,9 @@ void Sim::setupBoundaryConditions(float inflowVelocity, float inflowDensity) {
         /* dview(j, 0) = inflowDensity;  // inject density */
       });
   Kokkos::parallel_for(
-      4, KOKKOS_LAMBDA(int j) {
-        dview(j + HEIGHT / 2 , 0) = inflowDensity;  // inject density
+      20, KOKKOS_LAMBDA(int j) {
+        dview(j + HEIGHT / 2, 0) = inflowDensity; // inject density
+        dview( -j + HEIGHT / 2, 0) = inflowDensity; // inject density
       });
 
   Kokkos::parallel_for(
@@ -37,8 +38,13 @@ void Sim::setupBoundaryConditions(float inflowVelocity, float inflowDensity) {
   // Top & bottom walls: solid
   Kokkos::parallel_for(
       WIDTH, KOKKOS_LAMBDA(int i) {
-        yview(0, i) = 0.0f;      // bottom
-        yview(HEIGHT, i) = 0.0f; // top
+        yview(0, i) = 0.0f;
+        yview(1, i) = 0.0f;
+        /* yview(2, i) = 0.0f; */
+        yview(HEIGHT, i) = 0.0f;
+        yview(HEIGHT -1, i) = 0.0f;
+        /* yview(HEIGHT + 1, i) = 0.0f; */
+        /* yview(HEIGHT + 1, i) = 0.0f; */
       });
 
   density.sync_host();
@@ -63,17 +69,18 @@ void Sim::setupInitialDensity(int width, int consentration) {
 void Sim::addWall(int x, int y) { mac.toggleWall(x, y); }
 void Sim::step(float deltaTime, ControlPanel &ctrlPanel) {
   setupBoundaryConditions(ctrlPanel.velocity, 100.0f); // now handles air tunnel
-  setupInitialDensity(ctrlPanel.densityHeight, ctrlPanel.densityConsentration);
+  /* setupInitialDensity(ctrlPanel.densityHeight, ctrlPanel.densityConsentration); */
 
   compute_divergence(mac);
 
   // Debug divergence in center
-  auto div = mac.div;
-  for (int j = HEIGHT / 2 - 1; j <= HEIGHT / 2 + 1; ++j)
-    for (int i = WIDTH / 2 - 1; i <= WIDTH / 2 + 1; ++i)
-      std::cout << "div(" << j << "," << i << ")=" << div.h_view(j, i) << "\n";
+  /* auto div = mac.div; */
+  /* for (int j = HEIGHT / 2 - 1; j <= HEIGHT / 2 + 1; ++j) */
+  /*   for (int i = WIDTH / 2 - 1; i <= WIDTH / 2 + 1; ++i) */
+  /*     std::cout << "div(" << j << "," << i << ")=" << div.h_view(j, i) <<
+   * "\n"; */
 
-  solve_pressure(mac, 100); // ~40 Jacobi iterations
+  solve_pressure(mac, 100);
   subtract_pressure_gradient(mac);
 
   advect(mac, deltaTime, ctrlPanel.gravity);
