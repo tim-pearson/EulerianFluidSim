@@ -92,8 +92,8 @@ void solve_pressure(Mac &mac, int iters) {
   }
 
   // Make sure host view is synced if you need to read from CPU
-  pressure.sync_host();
-  pressure_tmp.sync_host();
+  pressure.sync_device();
+  pressure_tmp.sync_device();
 }
 
 void subtract_pressure_gradient(Mac &mac) {
@@ -101,18 +101,17 @@ void subtract_pressure_gradient(Mac &mac) {
   auto v = mac.ygrid.d_view;
   auto p = mac.pressure.d_view; // access the device view
 
+  // u: x-velocity (HEIGHT, WIDTH+1)
   Kokkos::parallel_for(
-      "SubtractGrad",
-      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({1, 1}, {HEIGHT - 1, WIDTH - 1}),
-      KOKKOS_LAMBDA(int j, int i) {
-        // u-grid: between cells in x
-        u(j, i) -= (p(j, i) - p(j, i - 1));
-        u(j, i + 1) -= (p(j, i + 1) - p(j, i));
+      "SubGradU",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({1, 1}, {HEIGHT - 1, WIDTH}),
+      KOKKOS_LAMBDA(int j, int i) { u(j, i) -= p(j, i) - p(j, i - 1); });
 
-        // v-grid: between cells in y
-        v(j, i) -= (p(j, i) - p(j - 1, i));
-        v(j + 1, i) -= (p(j + 1, i) - p(j, i));
-      });
+  // v: y-velocity (HEIGHT+1, WIDTH)
+  Kokkos::parallel_for(
+      "SubGradV",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({1, 1}, {HEIGHT, WIDTH - 1}),
+      KOKKOS_LAMBDA(int j, int i) { v(j, i) -= p(j, i) - p(j - 1, i); });
 
   Kokkos::fence();
 }
