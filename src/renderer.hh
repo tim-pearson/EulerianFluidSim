@@ -17,17 +17,22 @@ public:
   // Create / update textures
   void createDensityTexture(int width, int height, float *densityData);
   void createObstacleTexture(int width, int height, int *obstacleData);
+  void createPressureTexture(int width, int height, float *pressureData);
   void updateDensity(Kokkos::DualView<float **> &field);
   void updateObstacle(Kokkos::DualView<int **> &obs);
+
+  void updatePressure(Kokkos::DualView<float **> &pressure);
 
   // Compile and link shaders
   unsigned int make_shader(const std::string &vertex_filepath,
                            const std::string &fragment_filepath);
 
   GLuint obstacleTexture;
+
 private:
   GLuint VAO, VBO, EBO;
   GLuint densityTexture;
+  GLuint pressureTexture;
 
   size_t vertex_count;
   int gridWidth;

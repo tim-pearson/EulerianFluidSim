@@ -31,26 +31,26 @@ Renderer::Renderer(std::vector<Vertex> data, size_t count) {
                         reinterpret_cast<void *>(offsetof(Vertex, x)));
   glEnableVertexAttribArray(0);
 
-  // no per-vertex density anymore (comes from texture)
-  // glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-  //                       reinterpret_cast<void *>(offsetof(Vertex, density)));
-  // glEnableVertexAttribArray(1);
-
   glBindVertexArray(0);
 }
 
 void Renderer::draw(GLuint shader) {
   glBindVertexArray(VAO);
 
-  // Bind density to unit 0
+  // Density (unit 0)
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, densityTexture);
   glUniform1i(glGetUniformLocation(shader, "uDensity"), 0);
 
-  // Bind obstacle to unit 1
+  // Obstacle (unit 1)
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D, obstacleTexture);
   glUniform1i(glGetUniformLocation(shader, "uObstacle"), 1);
+
+  // Pressure (unit 2)
+  glActiveTexture(GL_TEXTURE2);
+  glBindTexture(GL_TEXTURE_2D, pressureTexture);
+  glUniform1i(glGetUniformLocation(shader, "uPressure"), 2);
 
   glDrawArrays(GL_TRIANGLE_FAN, 0, vertex_count);
   glBindVertexArray(0);
@@ -62,8 +62,23 @@ Renderer::~Renderer() {
   glDeleteBuffers(1, &EBO);
   glDeleteTextures(1, &densityTexture);
   glDeleteTextures(1, &obstacleTexture);
+  glDeleteTextures(1, &pressureTexture);
 }
+void Renderer::createPressureTexture(int width, int height,
+                                     float *pressureData) {
+  glGenTextures(1, &pressureTexture);
+  glBindTexture(GL_TEXTURE_2D, pressureTexture);
 
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, width, height, 0, GL_RED, GL_FLOAT,
+               pressureData);
+
+  glBindTexture(GL_TEXTURE_2D, 0);
+}
 void Renderer::createDensityTexture(int width, int height, float *densityData) {
   gridWidth = width;
   gridHeight = height;
@@ -173,4 +188,11 @@ unsigned int Renderer::make_shader(const std::string &vertex_filepath,
   }
 
   return shaderProgram;
+}
+
+void Renderer::updatePressure(Kokkos::DualView<float **> &pressure) {
+  pressure.sync_host();
+  glBindTexture(GL_TEXTURE_2D, pressureTexture);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, gridWidth, gridHeight, GL_RED,
+                  GL_FLOAT, pressure.h_view.data());
 }

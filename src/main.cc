@@ -78,10 +78,10 @@ int main() {
     unsigned int shader = renderer.make_shader("../src/shaders/default.vert",
                                                "../src/shaders/default.frag");
 
-
-
     sim.mac.sync_host();
     renderer.updateObstacle(sim.mac.sgrid);
+
+    glUniform1i(glGetUniformLocation(shader, "uMode"), 1); // density
 
     float lastTime = (float)glfwGetTime();
     while (!glfwWindowShouldClose(window)) {
