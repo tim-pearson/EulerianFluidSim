@@ -3,47 +3,42 @@
 #include "efsim/div.hh"
 
 Sim::Sim() : mac(), density() {}
-
 void Sim::setupBoundaryConditions(float inflowVelocity, float inflowDensity) {
   auto xview = mac.xgrid.d_view;
   auto yview = mac.ygrid.d_view;
   auto dview = density.field.d_view;
 
-  // Left wall: inlet
-  Kokkos::parallel_for(
-      HEIGHT, KOKKOS_LAMBDA(int j) {
-        xview(j, 0) = inflowVelocity; // fluid enters
-      });
-  Kokkos::parallel_for(
-      20, KOKKOS_LAMBDA(int j) {
-        dview(j + HEIGHT / 2, 0) = inflowDensity; // inject density
-        dview( -j + HEIGHT / 2, 0) = inflowDensity; // inject density
-      });
+  using Policy1D = Kokkos::RangePolicy<>;
+  using Policy2D = Kokkos::MDRangePolicy<Kokkos::Rank<2>>;
 
+  // Left wall inlet velocity and density injection
   Kokkos::parallel_for(
-      HEIGHT, KOKKOS_LAMBDA(int j) {
-        for (int i = 0; i < 3; ++i) { // first 3 columns
-          xview(j, i) = inflowVelocity;
+      Policy1D(0, HEIGHT), KOKKOS_LAMBDA(int j) {
+        xview(j, 0) = inflowVelocity; // leftmost column
+        for (int i = 1; i < 3; ++i) {
+          xview(j, i) = inflowVelocity; // first 3 columns
         }
       });
 
-  // Right wall: outlet (free-flow)
+  // Inject density along center vertically
   Kokkos::parallel_for(
-      HEIGHT, KOKKOS_LAMBDA(int j) {
-        xview(j, WIDTH - 2) = xview(j, WIDTH - 3);
-        dview(j, WIDTH - 2) = dview(j, WIDTH - 3);
+      Policy1D(0, 20), KOKKOS_LAMBDA(int j) {
+        dview(j + HEIGHT / 2, 0) = inflowDensity;
+        dview(-j + HEIGHT / 2, 0) = inflowDensity;
+      });
+
+  // Right wall: outlet (copy from neighbor)
+  Kokkos::parallel_for(
+      Policy1D(0, HEIGHT), KOKKOS_LAMBDA(int j) {
+        xview(j, WIDTH - 1) = xview(j, WIDTH - 2);
+        dview(j, WIDTH - 1) = dview(j, WIDTH - 2);
       });
 
   // Top & bottom walls: solid
   Kokkos::parallel_for(
-      WIDTH, KOKKOS_LAMBDA(int i) {
-        yview(0, i) = 0.0f;
-        yview(1, i) = 0.0f;
-        /* yview(2, i) = 0.0f; */
-        yview(HEIGHT, i) = 0.0f;
-        yview(HEIGHT -1, i) = 0.0f;
-        /* yview(HEIGHT + 1, i) = 0.0f; */
-        /* yview(HEIGHT + 1, i) = 0.0f; */
+      Policy1D(0, WIDTH), KOKKOS_LAMBDA(int i) {
+        yview(0, i) = 0.0f;      // bottom
+        yview(HEIGHT, i) = 0.0f; // top boundary
       });
 
   density.sync_host();
@@ -67,17 +62,9 @@ void Sim::setupInitialDensity(int width, int consentration) {
 
 void Sim::addWall(int x, int y) { mac.toggleWall(x, y); }
 void Sim::step(float deltaTime, ControlPanel &ctrlPanel) {
-  setupBoundaryConditions(ctrlPanel.velocity, 100.0f); // now handles air tunnel
-  /* setupInitialDensity(ctrlPanel.densityHeight, ctrlPanel.densityConsentration); */
+  setupBoundaryConditions(ctrlPanel.velocity, ctrlPanel.densityConsentration);
 
   compute_divergence(mac);
-
-  // Debug divergence in center
-  /* auto div = mac.div; */
-  /* for (int j = HEIGHT / 2 - 1; j <= HEIGHT / 2 + 1; ++j) */
-  /*   for (int i = WIDTH / 2 - 1; i <= WIDTH / 2 + 1; ++i) */
-  /*     std::cout << "div(" << j << "," << i << ")=" << div.h_view(j, i) <<
-   * "\n"; */
 
   solve_pressure(mac, 100);
   subtract_pressure_gradient(mac);

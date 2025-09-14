@@ -9,7 +9,7 @@ struct ControlPanel {
   bool diffusion = false;
   float velocityDrawRatio = 1.0f;
   int densityHeight = 1;
-  int densityConsentration = 250;
+  int densityConsentration = 20;
   float gravity = 0.0f;
   bool showStreamlines = false;
   int streamlineLength = 40;
