@@ -52,7 +52,7 @@ void Sim::setupInitialDensity(int width, int consentration) {
 
   if (width < 0)
     for (int j = 0; j < HEIGHT; j += 4)
-      density.field.h_view(HEIGHT / 2 + j + 1, 0) = consentration;
+      density.field.h_view(HEIGHT / 2 + j, 0) = consentration;
   else
     for (int j = 0; j < width; j++) {
       density.field.h_view(HEIGHT / 2 + j, 0) = consentration;
