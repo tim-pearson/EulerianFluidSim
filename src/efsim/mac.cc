@@ -33,7 +33,7 @@ void Mac::init() {
           s(j, i) = 0; // domain boundary
         } else {
           
-          s(j, i) = AirfoilShape(j, i, WIDTH, HEIGHT);
+          s(j, i) = CylinderShape(j, i, WIDTH, HEIGHT);
         }
       });
 

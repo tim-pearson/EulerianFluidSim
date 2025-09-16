@@ -28,6 +28,16 @@ public:
   void init();
   void sync_host();
 
+KOKKOS_INLINE_FUNCTION
+int CylinderShape(int i, int j, int WIDTH, int HEIGHT) {
+    const int cx = WIDTH / 2;
+    const int cy = HEIGHT / 2;
+    const int R  = WIDTH / 20; // radius
+
+    int dx = i - cx;
+    int dy = j - cy;
+    return (dx*dx + dy*dy <= R*R) ? 0 : 1;
+}
   // Example shape functions
   KOKKOS_INLINE_FUNCTION
   int AirfoilShape(int i, int j, int WIDTH, int HEIGHT) {

@@ -1,6 +1,6 @@
 #pragma once
-const int WIDTH =256;
-const int HEIGHT = 256;
+const int WIDTH =512;
+const int HEIGHT = 512;
 
 const bool OVERRELAXATION = false;
 

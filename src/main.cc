@@ -91,12 +91,14 @@ int main() {
       float deltaTime = currentTime - lastTime;
       lastTime = currentTime;
 
+      glfwSwapInterval(ctrlPanel.limitFps); // 0 = no V-Sync, unlimited FPS
       gui.draw();
       ctrlPanel.fps = ImGui::GetIO().Framerate;
 
       sim.step(deltaTime, ctrlPanel);
 
-      renderer.updatePressure(sim.mac.pressure);
+      
+      /* renderer.updatePressure(sim.mac.pressure); */
       renderer.updateDensity(sim.density.field);
 
       glClear(GL_COLOR_BUFFER_BIT);
