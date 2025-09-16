@@ -1,9 +1,10 @@
 #include "sim.hh"
 #include "consts.hh"
+#include "efsim/advect.hh"
 #include "efsim/div.hh"
 
 Sim::Sim() : mac(), density() {}
-void Sim::setupBoundaryConditions(float inflowVelocity, float inflowDensity) {
+void Sim::setupBoundaryConditions(float inflowVelocity, float inflowDensity, int width) {
   auto xview = mac.xgrid.d_view;
   auto yview = mac.ygrid.d_view;
   auto dview = density.field.d_view;
@@ -65,7 +66,7 @@ void Sim::setupInitialDensity(int width, int consentration) {
 
 void Sim::addWall(int x, int y) { mac.toggleWall(x, y); }
 void Sim::step(float deltaTime, ControlPanel &ctrlPanel) {
-  setupBoundaryConditions(ctrlPanel.velocity, ctrlPanel.densityConsentration);
+  setupBoundaryConditions(ctrlPanel.velocity, ctrlPanel.inflowDensity, 10);
 
   compute_divergence(mac);
 
@@ -73,7 +74,7 @@ void Sim::step(float deltaTime, ControlPanel &ctrlPanel) {
   subtract_pressure_gradient(mac);
 
   advect(mac, deltaTime, ctrlPanel.gravity);
-  density.advect(mac, ctrlPanel.dt);
+  density.advect_vof(mac, ctrlPanel.dt);
 
   mac.sync_host();
 }

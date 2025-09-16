@@ -9,7 +9,7 @@ struct ControlPanel {
   bool pressure = false;
   float velocityDrawRatio = 1.0f;
   int densityHeight = 1;
-  int densityConsentration = 20;
+  float inflowDensity = 0.5;
   float gravity = 0.0f;
   bool showStreamlines = false;
   int streamlineLength = 40;
@@ -56,7 +56,7 @@ struct ControlPanel {
     densityHeight += densityHeight % 2;
     ImGui::Text("[Density]");
     ImGui::SliderInt("Density Height", &densityHeight, -7, h);
-    ImGui::SliderInt("Density Consentration", &densityConsentration, -7, h);
+    ImGui::SliderFloat("Density Consentration", &inflowDensity, -7, h);
     ImGui::Checkbox("Pressure", &pressure);
 
     

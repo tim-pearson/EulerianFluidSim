@@ -12,7 +12,7 @@ public:
   Sim();
   void setupInitialDensity(int width, int consentration);
 
-void setupBoundaryConditions(float inflowVelocity, float inflowDensity);
+void setupBoundaryConditions(float inflowVelocity, float inflowDensity, int width);
 
   void addWall(int x, int y);
   void step(float deltaTime, ControlPanel &ctrlPanel);

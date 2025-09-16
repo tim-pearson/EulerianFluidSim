@@ -29,9 +29,9 @@ void main() {
     float pressure = texture(uPressure, texCoord).r;
     vec3 pressureColor = vec3(0.0); // default no hotspot
     float threshold = 0.9;
-    if (abs(pressure) > threshold) {
-        pressureColor = pressureColormap(pressure);
-    }
+    // if (abs(pressure) > threshold) {
+    //     pressureColor = pressureColormap(pressure);
+    // }
 
     // Blend pressure on top of density (simple max for visibility)
     vec3 finalColor = max(baseColor, pressureColor);
