@@ -23,7 +23,7 @@ void advect(Mac &mac, float deltaTime, float gravity) {
 
         px = Kokkos::clamp(px, 0.0f, WIDTH * 1.0f);
         py = Kokkos::clamp(py, 0.0f, HEIGHT * 1.0f);
-        xtemp(j, i) = mac.interpolateDevice(px, py).first;
+        xtemp.d_view(j, i) = mac.interpolateDevice(px, py).first;
       });
 
   Kokkos::parallel_for(
@@ -42,11 +42,11 @@ void advect(Mac &mac, float deltaTime, float gravity) {
 
         px = Kokkos::clamp(px, 0.0f, WIDTH * 1.0f);
         py = Kokkos::clamp(py, 0.0f, HEIGHT * 1.0f);
-        ytemp(j, i) = mac.interpolateDevice(px, py).second + gravity * deltaTime;
+        ytemp.d_view(j, i) = mac.interpolateDevice(px, py).second + gravity * deltaTime;
       });
 
   Kokkos::fence("Wait for end of compute");
-  Kokkos::deep_copy(mac.xgrid.d_view, xtemp);
-  Kokkos::deep_copy(mac.ygrid.d_view, ytemp);
+  Kokkos::deep_copy(mac.xgrid.d_view, xtemp.d_view);
+  Kokkos::deep_copy(mac.ygrid.d_view, ytemp.d_view);
   Kokkos::fence();
 }

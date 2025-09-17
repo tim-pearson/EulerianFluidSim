@@ -12,8 +12,12 @@ public:
   Kokkos::DualView<float **> xgrid;
   Kokkos::DualView<float **> ygrid;
   Kokkos::DualView<int **> sgrid;
-  Kokkos::View<float **> xtmp; // not initialized
-  Kokkos::View<float **> ytmp; // not initialized
+  Kokkos::DualView<float **> xtmp;         // not initialized
+  Kokkos::DualView<float **> ytmp;         // not initialized
+  Kokkos::DualView<float **> div;          // not initialized
+  Kokkos::DualView<float **> pressure;     // not initialized
+  Kokkos::DualView<float **> pressure_tmp; // not initialized
+                                           //
 
   // UI
   void drawInterp(float i, float j, int r, int g, int b, float factor);
@@ -24,7 +28,16 @@ public:
   void init();
   void sync_host();
 
-  
+KOKKOS_INLINE_FUNCTION
+int CylinderShape(int i, int j, int WIDTH, int HEIGHT) {
+    const int cx = WIDTH / 2;
+    const int cy = HEIGHT / 2;
+    const int R  = WIDTH / 15; // radius
+
+    int dx = i - cx;
+    int dy = j - cy;
+    return (dx*dx + dy*dy <= R*R) ? 0 : 1;
+}
   // Example shape functions
   KOKKOS_INLINE_FUNCTION
   int AirfoilShape(int i, int j, int WIDTH, int HEIGHT) {
@@ -70,54 +83,57 @@ public:
   }
 
   // Flexible init function
-  
+
 private:
   template <typename T>
   static KOKKOS_FUNCTION float interpolateX(T u, float px, float py) {
-    int i = Kokkos::floor(px);
-    int j = Kokkos::floor(py - 0.5);
-    assert(i >= 0 && i < WIDTH);
-    assert(j >= -1 && j < HEIGHT);
+    // Compute integer indices
+    int i = static_cast<int>(Kokkos::floor(px));
+    int j = static_cast<int>(Kokkos::floor(py - 0.5f));
 
+    // Clamp indices so i+1 < WIDTH and j+1 < HEIGHT
+    i = Kokkos::max(0, Kokkos::min(i, WIDTH - 2));
+    j = Kokkos::max(0, Kokkos::min(j, HEIGHT - 2));
+
+    // Compute fractional parts
     float x = px - i;
-    float y = py - j - 0.5;
-    assert(x >= 0 && x <= 1);
-    assert(y >= 0 && y <= 1);
+    float y = py - j - 0.5f;
 
-    float ret = 0;
-    if (j >= 0) {
-      ret += (1 - x) * (1 - y) * u(j, i);
-      ret += x * (1 - y) * u(j, i + 1);
-    }
+    // Clamp fractional parts to [0,1]
+    x = Kokkos::max(0.0f, Kokkos::min(x, 1.0f));
+    y = Kokkos::max(0.0f, Kokkos::min(y, 1.0f));
 
-    if (j < HEIGHT - 1) {
-      ret += (1 - x) * y * u(j + 1, i);
-      ret += x * y * u(j + 1, i + 1);
-    }
+    // Bilinear interpolation
+    float ret = 0.0f;
+    ret += (1 - x) * (1 - y) * u(j, i);
+    ret += x * (1 - y) * u(j, i + 1);
+    ret += (1 - x) * y * u(j + 1, i);
+    ret += x * y * u(j + 1, i + 1);
+
     return ret;
   }
+
   template <typename T>
   static KOKKOS_FUNCTION float interpolateY(T v, float px, float py) {
-    int i = Kokkos::floor(px - 0.5);
-    int j = Kokkos::floor(py);
-    assert(i >= -1 && i < WIDTH);
-    assert(j >= 0 && j < HEIGHT);
+    int i = static_cast<int>(Kokkos::floor(px - 0.5f));
+    int j = static_cast<int>(Kokkos::floor(py));
 
-    float x = px - i - 0.5;
+    i = Kokkos::max(0, Kokkos::min(i, WIDTH - 2));
+    j = Kokkos::max(0, Kokkos::min(j, HEIGHT - 2));
+
+    float x = px - (i + 0.5f);
     float y = py - j;
-    assert(x >= 0 && x <= 1);
-    assert(y >= 0 && y <= 1);
 
-    float ret = 0;
-    if (i >= 0) {
-      ret += (1 - x) * (1 - y) * v(j, i);
-      ret += (1 - x) * y * v(j + 1, i);
-    }
+    // Clamp fractional parts to [0,1] to avoid asserts
+    x = Kokkos::max(0.0f, Kokkos::min(x, 1.0f));
+    y = Kokkos::max(0.0f, Kokkos::min(y, 1.0f));
 
-    if (i < WIDTH - 1) {
-      ret += x * (1 - y) * v(j, i + 1);
-      ret += x * y * v(j + 1, i + 1);
-    }
+    float ret = 0.0f;
+    ret += (1 - x) * (1 - y) * v(j, i);
+    ret += x * (1 - y) * v(j, i + 1);
+    ret += (1 - x) * y * v(j + 1, i);
+    ret += x * y * v(j + 1, i + 1);
+
     return ret;
   }
 

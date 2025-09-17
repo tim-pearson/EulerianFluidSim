@@ -11,6 +11,7 @@ public:
   Kokkos::View<float **> tmp; // not initialized
   void sync_host();
   void advect(Mac &mac, float deltaTime);
+  void advect_vof(Mac &mac, float deltaTime);
 
   float interpolateHost(float px, float py);
 

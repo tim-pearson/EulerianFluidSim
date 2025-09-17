@@ -6,10 +6,10 @@ struct ControlPanel {
   float velocity = 3.0f;
   float dt = 0.2f;
   bool showAllVel = false;
-  bool showAllDensities = true;
+  bool pressure = false;
   float velocityDrawRatio = 1.0f;
   int densityHeight = 1;
-  int densityConsentration = 250;
+  float inflowDensity = 0.5;
   float gravity = 0.0f;
   bool showStreamlines = false;
   int streamlineLength = 40;
@@ -18,49 +18,60 @@ struct ControlPanel {
   bool limitFps = true;
   bool pause = false;
   bool opti_divergence = true;
-
-  void draw() {
-    ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(ImVec2(500, 500));
+void draw() {
+    // Set a smaller, square window
+    ImGui::SetNextWindowPos(ImVec2(10, 10));
+    ImGui::SetNextWindowSize(ImVec2(300, 300));
     ImGuiWindowFlags window_flags =
         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar;
+
     bool panelActive = ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) ||
                        ImGui::IsAnyItemActive();
-    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, panelActive ? 0.9f : 0.3f);
+    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, panelActive ? 0.9f : 0.6f);
 
-    ImGui::Begin("Left Panel", nullptr, window_flags);
+    ImGui::Begin("Control Panel", nullptr, window_flags);
 
-    ImGui::Text("[Simulator]");
-    ImGui::Text("FPS: %0.1f", fps);
-    ImGui::SliderFloat("Gravity", &gravity, -50.0f, 50.0f);
-    ImGui::SliderFloat("Dt", &dt, 0.001, 0.4);
+    // FPS color logic
+    ImVec4 fpsColor;
+    if (fps < 45.0f)
+        fpsColor = ImVec4(1.0f, 0.0f, 0.0f, 1.0f); // red
+    else if (fps < 58.0f)
+        fpsColor = ImVec4(1.0f, 0.65f, 0.0f, 1.0f); // orange
+    else
+        fpsColor = ImVec4(0.0f, 1.0f, 0.0f, 1.0f); // green
+
+    ImGui::TextColored(fpsColor, "FPS: %.1f", fps);
+    ImGui::Text("Dim: %i x %i", WIDTH, HEIGHT );
+
     ImGui::Checkbox("Pause", &pause);
     ImGui::Checkbox("Limit FPS", &limitFps);
-    ImGui::Separator();
+    ImGui::SliderFloat("Dt", &dt, 0.001f, 0.4f);
+    ImGui::SliderFloat("Gravity", &gravity, -10.0f, 10.0f);
 
-    ImGui::Text("[Velocity]");
-    ImGui::Checkbox("Show All Vel", &showAllVel);
+    ImGui::Separator();
+    ImGui::Text("Velocity");
+    ImGui::Checkbox("Show Vel", &showAllVel);
     ImGui::Checkbox("Opti Div", &opti_divergence);
-    ImGui::SliderFloat("Velocity", &velocity, 0.0f, 200.0f);
-    ImGui::SliderFloat("Velocity Draw Ratio", &velocityDrawRatio, 0.1f, 5.0f);
-    ImGui::Separator();
+    ImGui::SliderFloat("Vel", &velocity, 0.0f, 300.0f);
+    ImGui::SliderFloat("Vel Draw Ratio", &velocityDrawRatio, 0.1f, 5.0f);
 
-    ImGui::Text("[Streamlines]");
-    ImGui::Checkbox("Show Streamlines", &showStreamlines);
-    ImGui::SliderInt("Streamline Length", &streamlineLength, 5, 100);
-    ImGui::SliderFloat("Streamline Step", &streamlineStep, 0.1f, 2.0f);
     ImGui::Separator();
+    ImGui::Text("Streamlines");
+    ImGui::Checkbox("Show", &showStreamlines);
+    ImGui::SliderInt("Length", &streamlineLength, 5, 100);
+    ImGui::SliderFloat("Step", &streamlineStep, 0.1f, 2.0f);
 
-    int h = int(HEIGHT / 2);
+    ImGui::Separator();
+    ImGui::Text("Density");
+    int h = HEIGHT / 2;
     densityHeight += densityHeight % 2;
-    ImGui::Text("[Density]");
-    ImGui::SliderInt("Density Height", &densityHeight, -7, h);
-    ImGui::SliderInt("Density Consentration", &densityConsentration, -7, h);
+    ImGui::SliderInt("Height", &densityHeight, -7, h);
+    ImGui::SliderFloat("Concentration", &inflowDensity, 0.0f, 1.0f);
+    ImGui::Checkbox("Pressure", &pressure);
 
-    
-    ImGui::Separator();
     ImGui::End();
     ImGui::PopStyleVar();
-  }
+}
+
 };

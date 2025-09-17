@@ -2,46 +2,6 @@
 
 #include "consts.hh"
 
-void clear_divergence(Mac &mac, int iter) {
-  static int n = iter;
-  auto u = mac.xgrid.d_view;
-  auto v = mac.ygrid.d_view;
-  auto s = mac.sgrid.d_view;
-  for (int c = 0; c < n; c++) {
-    int cur = (WIDTH * HEIGHT) / 2;
-    if (c % 2 == 0 && (WIDTH * HEIGHT) % 2 == 1)
-      cur++;
-    Kokkos::parallel_for(
-        "Clear div", cur, KOKKOS_LAMBDA(int p) {
-          p *= 2;
-          int i = p % WIDTH;
-          int j = p / WIDTH;
-          if (j % 2 != c % 2)
-            i++;
-          if (s(j + 1, i + 1) == 0) {
-            u(j, i) = 0;
-            u(j, i + 1) = 0;
-            v(j, i) = 0;
-            v(j + 1, i) = 0;
-            return;
-          }
-
-          float d = u(j, i + 1) - u(j, i) + v(j + 1, i) - v(j, i);
-          if (OVERRELAXATION)
-            d *= 1.9;
-          int si = i + 1;
-          int sj = j + 1;
-          float curs =
-              s(sj, si + 1) + s(sj, si - 1) + s(sj + 1, si) + s(sj - 1, si);
-          u(j, i) += d * s(sj, si - 1) / curs;
-          u(j, i + 1) -= d * s(sj, si + 1) / curs;
-          v(j, i) += d * s(sj - 1, si) / curs;
-          v(j + 1, i) -= d * s(sj + 1, si) / curs;
-        });
-    Kokkos::fence();
-  }
-}
-
 #ifndef TILE_I
 #define TILE_I 16 // block size along i (width)
 #endif
@@ -105,4 +65,70 @@ void clear_divergence_opti(Mac &mac, int iters, bool OVERRELAXATION) {
       Kokkos::fence();
     }
   }
+}
+void solve_pressure(Mac &mac, int iters) {
+  using Policy2D = Kokkos::MDRangePolicy<Kokkos::Rank<2>>;
+  Policy2D policy({1, 1}, {HEIGHT - 1, WIDTH - 1});
+
+  auto &pressure = mac.pressure;         // DualView
+  auto &pressure_tmp = mac.pressure_tmp; // DualView
+  auto divergence = mac.div.d_view;
+
+  for (int k = 0; k < iters; ++k) {
+    Kokkos::parallel_for(
+        "PressureJacobi", policy, KOKKOS_LAMBDA(int j, int i) {
+          float pL = pressure.d_view(j, i - 1);
+          float pR = pressure.d_view(j, i + 1);
+          float pD = pressure.d_view(j - 1, i);
+          float pU = pressure.d_view(j + 1, i);
+
+          pressure_tmp.d_view(j, i) =
+              0.25f * (pL + pR + pD + pU - divergence(j, i));
+        });
+    Kokkos::fence();
+
+    // Swap the **dual view device data**
+    std::swap(pressure.d_view, pressure_tmp.d_view);
+  }
+
+  // Make sure host view is synced if you need to read from CPU
+  pressure.sync_device();
+  pressure_tmp.sync_device();
+}
+
+void subtract_pressure_gradient(Mac &mac) {
+  auto u = mac.xgrid.d_view;
+  auto v = mac.ygrid.d_view;
+  auto p = mac.pressure.d_view; // access the device view
+
+  // u: x-velocity (HEIGHT, WIDTH+1)
+  Kokkos::parallel_for(
+      "SubGradU",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({1, 1}, {HEIGHT - 1, WIDTH}),
+      KOKKOS_LAMBDA(int j, int i) { u(j, i) -= p(j, i) - p(j, i - 1); });
+
+  // v: y-velocity (HEIGHT+1, WIDTH)
+  Kokkos::parallel_for(
+      "SubGradV",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({1, 1}, {HEIGHT, WIDTH - 1}),
+      KOKKOS_LAMBDA(int j, int i) { v(j, i) -= p(j, i) - p(j - 1, i); });
+
+  Kokkos::fence();
+}
+
+void compute_divergence(Mac &mac) {
+  auto u = mac.xgrid.d_view;        // (HEIGHT, WIDTH+1)
+  auto v = mac.ygrid.d_view;        // (HEIGHT+1, WIDTH)
+  auto divergence = mac.div.d_view; // access device view
+
+  Kokkos::parallel_for(
+      "ComputeDivergence",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {HEIGHT, WIDTH}),
+      KOKKOS_LAMBDA(int j, int i) {
+        float du = u(j, i + 1) - u(j, i); // right - left
+        float dv = v(j + 1, i) - v(j, i); // top - bottom
+        divergence(j, i) = du + dv;       // Δx = Δy = 1
+      });
+
+  Kokkos::fence();
 }
