@@ -32,7 +32,7 @@ KOKKOS_INLINE_FUNCTION
 int CylinderShape(int i, int j, int WIDTH, int HEIGHT) {
     const int cx = WIDTH / 2;
     const int cy = HEIGHT / 2;
-    const int R  = WIDTH / 20; // radius
+    const int R  = WIDTH / 15; // radius
 
     int dx = i - cx;
     int dy = j - cy;
