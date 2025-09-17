@@ -1,4 +1,4 @@
-# Fluid Simulation with MAC Grid
+# Mass Converving Eularian Fluid Simulator
 
 ![MISSING IMAGE](./images/timothy_cylinder.png)  
 *Cylinder Wind Tunnel*
