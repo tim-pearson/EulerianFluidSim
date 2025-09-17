@@ -1,5 +1,8 @@
 # Fluid Simulation with MAC Grid
 
+![MISSING IMAGE](./images/timothy_cylinder.png)  
+*Cylinder Wind Tunnel*
+
 This project implements a 2D incompressible and mass-conserving Eulerian Fluid
 Simulator using a **MAC (Marker-and-Cell) grid**.
 
