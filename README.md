@@ -19,8 +19,8 @@ should be used rather than shortcuts like clearing divergence.
 
 1. **Clone the repository** (if not already):
 ```bash
-git clone <your_repo_url>
-cd <your_repo>
+git clone git@github.com:tim-pearson/EulerianFluidSim.git
+cd EulerianFluidSim
 ```
 ## Ensure Imgui is Available
 ```bash
