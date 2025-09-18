@@ -1,6 +1,8 @@
 # Mass Conserving Eulerian Fluid Simulator
 
 ![Cylinder Wind Tunnel](./images/timothy_cylinder.png)  
+**(1024x1024) Wind Tunnel Cylinder**
+
 
 This project implements a 2D incompressible and mass-conserving Eulerian Fluid
 Simulator using a **MAC (Marker-and-Cell) grid**.
