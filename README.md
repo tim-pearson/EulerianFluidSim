@@ -1,7 +1,6 @@
-# Mass Converving Eularian Fluid Simulator
+# Mass Conserving Eulerian Fluid Simulator
 
-![MISSING IMAGE](./images/timothy_cylinder.png)  
-*Cylinder Wind Tunnel*
+![Cylinder Wind Tunnel](./images/timothy_cylinder.png)  
 
 This project implements a 2D incompressible and mass-conserving Eulerian Fluid
 Simulator using a **MAC (Marker-and-Cell) grid**.
@@ -13,6 +12,37 @@ Simulator using a **MAC (Marker-and-Cell) grid**.
 
 > Note: To enforce true mass conservation, the **pressure projection** method
 should be used rather than shortcuts like clearing divergence.
+
+---
+
+## Installation & Run
+
+1. **Clone the repository** (if not already):
+```bash
+git clone <your_repo_url>
+cd <your_repo>
+```
+## Ensure Imgui is Available
+```bash
+git clone https://github.com/ocornut/imgui.git src/imgui
+```
+
+## Configure and build with CMake
+
+```bash
+mkdir build
+cd build
+cmake ..
+make -j$(nproc)
+```
+
+## Run the Simulator
+```bash
+./sim
+```
+
+
+
 
 # Implementation
 

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(yerp)
+project(sim)
 
 cmake_policy(SET CMP0072 NEW)
 
@@ -22,19 +22,19 @@ set(IMGUI_SOURCES
 # Glad source (in src/)
 set(GLAD_SOURCE ${CMAKE_SOURCE_DIR}/src/glad.c)
 
-add_executable(yerp
+add_executable(sim
     ${sources}
     ${IMGUI_SOURCES}
     ${GLAD_SOURCE}
 )
 
-target_include_directories(yerp PRIVATE
+target_include_directories(sim PRIVATE
     ${CMAKE_SOURCE_DIR}/src    # so "glad.h" is found
     ${IMGUI_DIR}
     ${IMGUI_DIR}/backends
 )
 
-target_link_libraries(yerp PRIVATE
+target_link_libraries(sim PRIVATE
   Kokkos::kokkos
     glfw
     OpenGL::GL
