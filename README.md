@@ -5,7 +5,6 @@
 ![Cylinder Wind Tunnel](./images/timothy_cylinder.png)  
 
 
-![Cylinder Wind Tunnel](./images/highvel_cylinder.jpeg)  
 
 ---
 
@@ -79,3 +78,6 @@ with Kokkos
 
 - Achieves ~14 ms/frame at 1024×1024 resolution (70+ FPS)
 - Designed for numerical stability and mass conservation at high resolutions
+
+![Cylinder Wind Tunnel](./images/highvel_cylinder.jpeg)  
+![Cylinder Wind Tunnel](./images/timothy_streamlines.png)
