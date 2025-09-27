@@ -2,7 +2,7 @@
 
 **Wind tunnel simulation of flow around a cylinder (1024×1024 grid)**
 
-![Cylinder Wind Tunnel](./images/timothy_cylinder.png)  
+![Cylinder Wind Tunnel](./images/timothy_cylinder.png)
 
 
 
@@ -79,5 +79,5 @@ with Kokkos
 - Achieves ~14 ms/frame at 1024×1024 resolution (70+ FPS)
 - Designed for numerical stability and mass conservation at high resolutions
 
-![Cylinder Wind Tunnel](./images/highvel_cylinder.jpeg)  
+![Cylinder Wind Tunnel](./images/highvel_cylinder.png)
 ![Cylinder Wind Tunnel](./images/timothy_streamlines.png)
