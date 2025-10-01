@@ -4,7 +4,8 @@
 #include "efsim/div.hh"
 
 Sim::Sim() : mac(), density() {}
-void Sim::setupBoundaryConditions(float inflowVelocity, float inflowDensity, int width) {
+void Sim::setupBoundaryConditions(float inflowVelocity, float inflowDensity,
+                                  int width) {
   auto xview = mac.xgrid.d_view;
   auto yview = mac.ygrid.d_view;
   auto dview = density.field.d_view;
@@ -70,11 +71,14 @@ void Sim::step(float deltaTime, ControlPanel &ctrlPanel) {
 
   compute_divergence(mac);
 
-  solve_pressure(mac, 100);
+  solve_pressure(mac, ctrlPanel.iters);
   subtract_pressure_gradient(mac);
 
   advect(mac, deltaTime, ctrlPanel.gravity);
-  density.advect_vof(mac, ctrlPanel.dt);
+  if (ctrlPanel.vofAdvection)
+    density.advect_vof(mac, ctrlPanel.dt);
+  else
+    density.advect(mac, ctrlPanel.dt);
 
   mac.sync_host();
 }

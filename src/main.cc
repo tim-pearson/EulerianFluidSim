@@ -104,7 +104,6 @@ int main() {
       glClear(GL_COLOR_BUFFER_BIT);
       glUseProgram(shader);
 
-      glUniform1i(glGetUniformLocation(shader, "uMode"), ctrlPanel.pressure);
 
       renderer.draw(shader);
 

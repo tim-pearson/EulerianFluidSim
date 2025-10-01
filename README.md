@@ -80,6 +80,9 @@ with Kokkos
 - Designed for numerical stability and mass conservation at high resolutions
 
 **Wind tunnel simulation Cylinder**
+
 ![Cylinder Wind Tunnel](./images/highvel_cylinder.png)
+
 **Wind tunnel simulation SDL prototype**
+
 ![Cylinder Wind Tunnel](./images/timothy_streamlines.png)
