@@ -4,8 +4,7 @@
 #include "efsim/div.hh"
 
 Sim::Sim() : mac(), density() {}
-void Sim::setupBoundaryConditions(float inflowVelocity, float inflowDensity,
-                                  int width) {
+void Sim::setupBoundaryConditions(float inflowVelocity, float inflowDensity) {
   auto xview = mac.xgrid.d_view;
   auto yview = mac.ygrid.d_view;
   auto dview = density.field.d_view;
@@ -18,13 +17,20 @@ void Sim::setupBoundaryConditions(float inflowVelocity, float inflowDensity,
         xview(j, 0) = inflowVelocity;
         xview(j, 1) = inflowVelocity;
       });
+  // Instead of small 40-cell vertical strip, fill entire left column
   Kokkos::parallel_for(
-      Policy1D(0, 40), KOKKOS_LAMBDA(int j) {
-        dview(j + HEIGHT / 2, 0) = inflowDensity;
-        dview(j + HEIGHT / 2, 1) = inflowDensity;
-        dview(-j + HEIGHT / 2, 1) = inflowDensity;
-        dview(-j + HEIGHT / 2, 0) = inflowDensity;
+      Policy1D(0, HEIGHT), KOKKOS_LAMBDA(int j) {
+        dview(j, 0) = inflowDensity;
+        dview(j, 1) = inflowDensity; // optional: first interior cell
       });
+
+  /* Kokkos::parallel_for( */
+  /*     Policy1D(0, 40), KOKKOS_LAMBDA(int j) { */
+  /*       dview(j + HEIGHT / 2, 0) = inflowDensity; */
+  /*       dview(j + HEIGHT / 2, 1) = inflowDensity; */
+  /*       dview(-j + HEIGHT / 2, 1) = inflowDensity; */
+  /*       dview(-j + HEIGHT / 2, 0) = inflowDensity; */
+  /*     }); */
 
   // --- Right wall: solid (no velocity outflow) ---
   Kokkos::parallel_for(
@@ -67,12 +73,16 @@ void Sim::setupInitialDensity(int width, int consentration) {
 
 void Sim::addWall(int x, int y) { mac.toggleWall(x, y); }
 void Sim::step(float deltaTime, ControlPanel &ctrlPanel) {
-  setupBoundaryConditions(ctrlPanel.velocity, ctrlPanel.inflowDensity, 10);
+  setupBoundaryConditions(ctrlPanel.velocity, ctrlPanel.inflowDensity);
 
-  compute_divergence(mac);
+  if (ctrlPanel.realPressureSolve) {
+    compute_divergence(mac);
 
-  solve_pressure(mac, ctrlPanel.iters);
-  subtract_pressure_gradient(mac);
+    solve_pressure(mac, ctrlPanel.iters);
+    subtract_pressure_gradient(mac);
+  } else {
+    clear_divergence_opti(mac, ctrlPanel.iters, ctrlPanel.overRelaxation);
+  }
 
   advect(mac, deltaTime, ctrlPanel.gravity);
   if (ctrlPanel.vofAdvection)

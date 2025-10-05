@@ -4,7 +4,7 @@
 
 struct ControlPanel {
   float velocity = 3.0f;
-  float dt = 0.2f;
+  float dt = 0.05f;
   int iters = 40;
   float inflowDensity = 0.5;
   float gravity = 0.0f;
@@ -12,6 +12,8 @@ struct ControlPanel {
   bool limitFps = true;
   bool vofAdvection = false;
   bool pause = false;
+  bool realPressureSolve = true;
+  bool overRelaxation = false;
 void draw() {
     // Set a smaller, square window
     ImGui::SetNextWindowPos(ImVec2(10, 10));
@@ -40,15 +42,15 @@ void draw() {
 
     ImGui::Checkbox("Pause", &pause);
     ImGui::Checkbox("Limit FPS", &limitFps);
-    ImGui::SliderFloat("Dt", &dt, 0.001f, 0.4f);
+    ImGui::SliderFloat("Dt", &dt, 0.001f, 0.1f);
     ImGui::SliderFloat("Gravity", &gravity, -10.0f, 10.0f);
 
     ImGui::Separator();
     ImGui::Text("Velocity");
     ImGui::SliderFloat("Vel", &velocity, 0.0f, 300.0f);
+    ImGui::Checkbox("Pressure solve", &realPressureSolve);
+    ImGui::Checkbox("Overrelaxation", &overRelaxation);
 
-    ImGui::Separator();
-    ImGui::Text("Streamlines");
 
     ImGui::Separator();
     ImGui::Text("Density");
