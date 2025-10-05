@@ -99,8 +99,6 @@ void ScalarField::advect(Mac &mac, float deltaTime) {
         px = Kokkos::clamp(px, 0.0f, WIDTH - 1.0f);
         py = Kokkos::clamp(py, 0.0f, HEIGHT - 1.0f);
 
-        // Use same convention as your interpolate(): cell centers at (i+0.5,
-        // j+0.5)
         int i0 = (int)Kokkos::floor(px - 0.5f);
         int j0 = (int)Kokkos::floor(py - 0.5f);
 

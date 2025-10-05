@@ -28,10 +28,17 @@ add_executable(sim
     ${GLAD_SOURCE}
 )
 
+# target_include_directories(sim PRIVATE
+#     ${CMAKE_SOURCE_DIR}/src    # so "glad.h" is found
+#     ${IMGUI_DIR}
+#     ${IMGUI_DIR}/backends
+# )
+
 target_include_directories(sim PRIVATE
-    ${CMAKE_SOURCE_DIR}/src    # so "glad.h" is found
-    ${IMGUI_DIR}
+    ${CMAKE_SOURCE_DIR}/src    # glad.h
+    ${IMGUI_DIR}               # ImGui
     ${IMGUI_DIR}/backends
+    ${CMAKE_SOURCE_DIR}/include  # KHR headers
 )
 
 target_link_libraries(sim PRIVATE
