@@ -3,6 +3,7 @@
 !*.png
 !*.cc
 !*.cpp
+!notes/*
 !*.c
 !*.h
 !*.hh
