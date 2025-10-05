@@ -28,16 +28,16 @@ public:
   void init();
   void sync_host();
 
-KOKKOS_INLINE_FUNCTION
-int CylinderShape(int i, int j, int WIDTH, int HEIGHT) {
+  KOKKOS_INLINE_FUNCTION
+  int CylinderShape(int i, int j, int WIDTH, int HEIGHT) {
     const int cx = WIDTH / 2;
     const int cy = HEIGHT / 2;
-    const int R  = WIDTH / 15; // radius
+    const int R = WIDTH / 15; // radius
 
     int dx = i - cx;
     int dy = j - cy;
-    return (dx*dx + dy*dy <= R*R) ? 0 : 1;
-}
+    return (dx * dx + dy * dy <= R * R) ? 0 : 1;
+  }
   // Example shape functions
   KOKKOS_INLINE_FUNCTION
   int AirfoilShape(int i, int j, int WIDTH, int HEIGHT) {
@@ -58,6 +58,43 @@ int CylinderShape(int i, int j, int WIDTH, int HEIGHT) {
     double y_phys = j;
 
     return (y_phys >= y_bot && y_phys <= y_top) ? 0 : 1; // 0=solid, 1=fluid
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  int AdvancedAirfoilShape(int i, int j, int WIDTH, int HEIGHT,
+                           double alpha_deg, double scale = 1.0) {
+    const double chord = WIDTH * 0.5;
+    const double t = 0.12;
+
+    // Grid center
+    const double x_center = WIDTH / 2.0;
+    const double y_center = HEIGHT / 2.0;
+
+    // Convert angle to radians
+    double alpha = alpha_deg * M_PI / 180.0;
+
+    // Coordinates relative to airfoil center, scaled
+    double xi = (i - x_center) / scale;
+    double yj = (j - y_center) / scale;
+
+    // Rotate coordinates by -alpha (pitch)
+    double xr = xi * cos(alpha) + yj * sin(alpha);
+    double yr = -xi * sin(alpha) + yj * cos(alpha);
+
+    // Shift back to airfoil center along chord
+    double xf = xr / chord + 0.5; // normalized x along chord in [0,1]
+    if (xf < 0.0 || xf > 1.0)
+      return 1; // fluid outside airfoil
+
+    // NACA 4-digit thickness
+    double yt = 5 * t * chord *
+                (0.2969 * sqrt(xf) - 0.1260 * xf - 0.3516 * xf * xf +
+                 0.2843 * xf * xf * xf - 0.1015 * xf * xf * xf * xf);
+
+    double y_top = yt;
+    double y_bot = -yt;
+
+    return (yr >= y_bot && yr <= y_top) ? 0 : 1; // 0=solid, 1=fluid
   }
 
   KOKKOS_INLINE_FUNCTION

@@ -32,9 +32,9 @@ void Mac::init() {
         if (j <= 1 || j >= HEIGHT || i == 0 || i == WIDTH + 1) {
           s(j, i) = 0; // domain boundary
         } else {
-          
-          s(j, i) = 1 ;
-          /* CylinderShape(j, i + 300, WIDTH, HEIGHT); */
+
+          /* s(j, i) = CylinderShape(j, i + 300, WIDTH, HEIGHT); */
+          s(j, i) = AdvancedAirfoilShape(j, i, WIDTH, HEIGHT, 70, 0.75);
         }
       });
 
