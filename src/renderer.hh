@@ -8,7 +8,7 @@
 
 class Renderer {
 public:
-  Renderer(std::vector<Vertex> data, size_t count);
+  Renderer();
   ~Renderer();
 
   // Draw the mesh with currently bound shader

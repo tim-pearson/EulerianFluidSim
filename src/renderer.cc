@@ -9,7 +9,15 @@
 
 #include "glad.h"
 
-Renderer::Renderer(std::vector<Vertex> data, size_t count) {
+Renderer::Renderer() {
+  std::vector<Vertex> data = {
+      {-1.0f, -1.0f}, // bottom-left
+      {1.0f, -1.0f},  // bottom-right
+      {1.0f, 1.0f},   // top-right
+      {-1.0f, 1.0f}   // top-left
+  };
+  size_t count = data.size();
+
   GLuint indices[] = {0, 1, 2, 0, 3, 2};
   vertex_count = count;
 
@@ -123,34 +131,38 @@ void Renderer::updateDensity(Kokkos::DualView<float **> &field) {
 }
 
 void Renderer::updatePressure(Kokkos::DualView<float **> &pressure) {
-    pressure.sync_host();
+  pressure.sync_host();
 
-    // Find min/max on host
-    float minP = pressure.h_view(0,0);
-    float maxP = pressure.h_view(0,0);
-    for (int j = 0; j < gridHeight; ++j) {
-        for (int i = 0; i < gridWidth; ++i) {
-            float v = pressure.h_view(j, i);
-            if (v < minP) minP = v;
-            if (v > maxP) maxP = v;
-        }
+  // Find min/max on host
+  float minP = pressure.h_view(0, 0);
+  float maxP = pressure.h_view(0, 0);
+  for (int j = 0; j < gridHeight; ++j) {
+    for (int i = 0; i < gridWidth; ++i) {
+      float v = pressure.h_view(j, i);
+      if (v < minP)
+        minP = v;
+      if (v > maxP)
+        maxP = v;
     }
+  }
 
-    float range = maxP - minP;
-    if (range < 1e-6f) range = 1.0f; // avoid divide by zero
+  float range = maxP - minP;
+  if (range < 1e-6f)
+    range = 1.0f; // avoid divide by zero
 
-    // Create normalized buffer
-    std::vector<float> normalized(gridWidth * gridHeight);
-    for (int j = 0; j < gridHeight; ++j) {
-        for (int i = 0; i < gridWidth; ++i) {
-            normalized[j + gridWidth * i] = (pressure.h_view(j, i) - minP) / range * 2.0f - 1.0f;
-            // normalized to [-1,1]
-        }
+  // Create normalized buffer
+  std::vector<float> normalized(gridWidth * gridHeight);
+  for (int j = 0; j < gridHeight; ++j) {
+    for (int i = 0; i < gridWidth; ++i) {
+      normalized[j + gridWidth * i] =
+          (pressure.h_view(j, i) - minP) / range * 2.0f - 1.0f;
+      // normalized to [-1,1]
     }
+  }
 
-    glBindTexture(GL_TEXTURE_2D, pressureTexture);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, gridWidth, gridHeight, GL_RED,
-                    GL_FLOAT, normalized.data());
+  glBindTexture(GL_TEXTURE_2D, pressureTexture);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, gridWidth, gridHeight, GL_RED,
+                  GL_FLOAT, normalized.data());
 }
 
 void Renderer::updateObstacle(Kokkos::DualView<int **> &obs) {
@@ -222,4 +234,3 @@ unsigned int Renderer::make_shader(const std::string &vertex_filepath,
 
   return shaderProgram;
 }
-

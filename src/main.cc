@@ -14,25 +14,6 @@
 #include "imgui/backends/imgui_impl_opengl3.h"
 #include "renderer.hh"
 
-void updateDensity(std::vector<float> &densityData, int width, int height,
-                   float time) {
-  // Center of the grid
-  float cx = (width - 1) * 0.5f;
-  float cy = (height - 1) * 0.5f;
-  float maxRadius = std::sqrt(cx * cx + cy * cy);
-
-  for (int j = 0; j < height; ++j) {
-    for (int i = 0; i < width; ++i) {
-      float dx = i - cx;
-      float dy = j - cy;
-      float dist = std::sqrt(dx * dx + dy * dy);
-
-      // Pulsating circular wave
-      float wave = 0.5f + 0.5f * std::sin(dist * 0.1f - time * 2.0f);
-      densityData[j * width + i] = wave;
-    }
-  }
-}
 int main() {
   Kokkos::initialize();
   {
@@ -59,16 +40,9 @@ int main() {
     GUI gui(ctrlPanel, window);
     gui.setup();
 
-    std::vector<Vertex> vertices = {
-        {-1.0f, -1.0f}, // bottom-left
-        {1.0f, -1.0f},  // bottom-right
-        {1.0f, 1.0f},   // top-right
-        {-1.0f, 1.0f}   // top-left
-    };
+    
+    Renderer renderer;
 
-    Renderer renderer(vertices, vertices.size());
-
-    // ✅ Create density + obstacle textures once
     renderer.createDensityTexture(WIDTH, HEIGHT,
                                   sim.density.field.h_view.data());
     renderer.createObstacleTexture(WIDTH, HEIGHT, sim.mac.sgrid.h_view.data());
