@@ -5,6 +5,9 @@
 ![Cylinder Wind Tunnel](./images/timothy_cylinder.png)
 
 
+**Wind tunnel simulation of flow around a Airfoil (1024×1024 grid)**
+![Airfoil Wind Tunnel](./images/sim.png)
+
 
 ---
 
