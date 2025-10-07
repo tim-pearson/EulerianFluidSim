@@ -11,9 +11,9 @@ struct ControlPanel {
   float fps = 0.0f;
   bool limitFps = true;
   bool vofAdvection = false;
+  bool rkAdvection = false;
   bool pause = false;
   bool realPressureSolve = true;
-  bool overRelaxation = false;
 void draw() {
     // Set a smaller, square window
     ImGui::SetNextWindowPos(ImVec2(10, 10));

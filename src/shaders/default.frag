@@ -22,8 +22,11 @@ void main() {
     }
 
     // Base density color (green)
-    float density = texture(uDensity, texCoord).r;
-    vec3 baseColor = mix(vec3(0.0), vec3(0.0, 1.0, 0.0), density);
+
+    float d = texture(uDensity, texCoord).r;
+    float gamma = 0.5; // <1 brightens low values
+    float adjusted = pow(d, gamma);
+    vec3 baseColor = mix(vec3(0.0), vec3(0.0, 1.0, 0.0), adjusted);
 
     // Overlay pressure hotspots
     float pressure = texture(uPressure, texCoord).r;

@@ -34,7 +34,7 @@ void Mac::init() {
         } else {
 
           /* s(j, i) = CylinderShape(j, i + 300, WIDTH, HEIGHT); */
-          s(j, i) = AdvancedAirfoilShape(j, i, WIDTH, HEIGHT, 70, 0.75);
+          s(j, i) = AdvancedAirfoilShape(j, i, WIDTH, HEIGHT, 80, 0.75);
         }
       });
 
